@@ -1,0 +1,299 @@
+Content-Type: multipart/alternative;
+ boundary="------------PWMCgIIvS7dqoACAp3icf0yE"
+Message-ID: <df00d6a5-1767-44c4-91e3-85d284f465f5@gmail.com>
+Date: Thu, 16 Nov 2023 12:26:41 -0300
+MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: TP Reg Log
+From: Franco Assanelli <assafranco@gmail.com>
+To: nicolas@kuzminski.com.ar
+References: <4816690a-7d13-491d-b0f4-64fc069f5ba7@gmail.com>
+ <e491df30-9625-4be4-8566-f3bb3ce27454@gmail.com>
+Content-Language: en-US
+In-Reply-To: <e491df30-9625-4be4-8566-f3bb3ce27454@gmail.com>
+
+This is a multi-part message in MIME format.
+--------------PWMCgIIvS7dqoACAp3icf0yE
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
+
+/Te paso lo que fui redactando hasta ahora en el script./
+
+
+rm(list = ls())
+library(corrplot)
+library(olsrr)
+library(wooldridge)
+library(lmtest)
+datos <- read.csv("data.csv")
+View(datos)
+
+######################
+
+# Eliminación a priori de variables.
+##Nos quedamos con las variables que contienen las medias por sencillez 
+para comunicar los resultados, y porque expresan mejor la situación de 
+cada caso.
+
+datos2 <- datos[,c(2:12)] #Recorte de datos
+colnames(datos2) #Lista de variables
+
+##Yo creo que podemos omitir otras tantas variables o mediciones porque 
+desconocemos de qué tratan y porque son muy específicas del campo de 
+estudio, quizás. POr ejemplo, compactness.... Pero hay variables, como 
+perimeter que SON CLAVE, porque hablan específicamente del perímetro del 
+tumor.
+
+#Análisis exploratorio de datos
+
+##Valores duplicados
+datos[duplicated(datos$id), "id"] #NO hay
+
+##Boxplots
+# boxplot(datos$radius_mean, horizontal = T)
+# boxplot(datos$texture_mean, horizontal = T)
+# boxplot(datos$perimeter_mean, horizontal = T)
+# boxplot(datos$area_mean, horizontal = T)
+# boxplot(datos$smoothness_mean, horizontal = T)
+# boxplot(datos$compactness_mean, horizontal = T)
+
+##Variables
+colnames(datos)
+
+##Eliminar variable X?
+
+##Cambio valores variable rta
+table(datos$diagnosis)
+
+datos$diagnosis <- factor(datos$diagnosis,
+                           levels = c("B", "M"),
+                           labels = c(0, 1))
+
+
+datos$diagnosis
+
+
+## Según los scripts de las clases, hay que aplicar los WOE, agrupar 
+variables,u otras cosas, antes de realizar el modelo de regresión
+
+#Regresión
+diagnostico <-
+   glm(
+     diagnosis ~ radius_mean + texture_mean + perimeter_mean + area_mean 
++ smoothness_mean + compactness_mean + concavity_mean + 
+concave.points_mean + symmetry_mean + fractal_dimension_mean,
+     family = binomial(link = "logit"),
+     datos
+   )
+
+## Pruebas Ómnibus
+ols_regress(diagnostico)
+
+lrtest(diagnostico)
+
+
+#########################
+#########################
+
+data("sleep75")
+
+
+
+/Saludos
+Fran/
+
+
+El 16/11/2023 a las 11:34, Franco Assanelli escribió:
+>
+> Estaba pensando, además, algo que te dije por wasap.
+>
+> tenemos 3 bloques de variables:
+>
+>  1. promedios de observaciones
+>  2. errores estándar de observaciones
+>  3. las, ahora no recuerdo bien, peores medidas ("worst")
+>
+> Entonces, a partir de las consignas (que adjunto al final del presente 
+> mensaje), tenemos que eliminar variables que nos resulten inviables 
+> para analizar esto.
+>
+> Yo pienso que los errores estándar y las medidas "worst" las podríamos 
+> descartar porque analizamos casos y no veo la utilidad de analizar el 
+> error estándar de cada caso, ni la medida "worst". Además, ¿cómo las 
+> comunicarías...?
+>
+> Decime qué pensás como para ya hacer o terminar la primera consigna.
+>
+>
+> El 16/11/2023 a las 11:26, Franco Assanelli escribió:
+>>
+>> Nico, cómo andás?
+>>
+>> Los profes me contestaron que la prueba ómnibus es la prueba de razón 
+>> de verosimilitud pero hecha según añadidura de variables una por una 
+>> , en bloques y entre constante y modelo completo. Ahora te adjunto:
+>>
+>>  1. fragmento del Kutner que explica sobre la prueba de razón de veros.,
+>>  2. un ppt que está en el aula v.
+>>  3. el mail del profe
+>>
+>> Saludos
+>> Fran
+>>
+--------------PWMCgIIvS7dqoACAp3icf0yE
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  </head>
+  <body>
+    <p><i>Te paso lo que fui redactando hasta ahora en el script.</i></p>
+    <p><br>
+    </p>
+    <p>rm(list = ls())<br>
+      library(corrplot)<br>
+      library(olsrr)<br>
+      library(wooldridge)<br>
+      library(lmtest)<br>
+      datos &lt;- read.csv("data.csv")<br>
+      View(datos)<br>
+      <br>
+      ######################<br>
+      <br>
+      # Eliminación a priori de variables.<br>
+      ##Nos quedamos con las variables que contienen las medias por
+      sencillez para comunicar los resultados, y porque expresan mejor
+      la situación de cada caso.<br>
+      <br>
+      datos2 &lt;- datos[,c(2:12)] #Recorte de datos<br>
+      colnames(datos2) #Lista de variables<br>
+      <br>
+      ##Yo creo que podemos omitir otras tantas variables o mediciones
+      porque desconocemos de qué tratan y porque son muy específicas del
+      campo de estudio, quizás. POr ejemplo, compactness.... Pero hay
+      variables, como perimeter que SON CLAVE, porque hablan
+      específicamente del perímetro del tumor.<br>
+      <br>
+      #Análisis exploratorio de datos<br>
+      <br>
+      ##Valores duplicados<br>
+      datos[duplicated(datos$id), "id"] #NO hay<br>
+      <br>
+      ##Boxplots<br>
+      # boxplot(datos$radius_mean, horizontal = T)<br>
+      # boxplot(datos$texture_mean, horizontal = T)<br>
+      # boxplot(datos$perimeter_mean, horizontal = T)<br>
+      # boxplot(datos$area_mean, horizontal = T)<br>
+      # boxplot(datos$smoothness_mean, horizontal = T)<br>
+      # boxplot(datos$compactness_mean, horizontal = T)<br>
+      <br>
+      ##Variables<br>
+      colnames(datos)<br>
+      <br>
+      ##Eliminar variable X?<br>
+      <br>
+      ##Cambio valores variable rta<br>
+      table(datos$diagnosis)<br>
+      <br>
+      datos$diagnosis &lt;- factor(datos$diagnosis,<br>
+                                levels = c("B", "M"),<br>
+                                labels = c(0, 1))<br>
+      <br>
+      <br>
+      datos$diagnosis<br>
+      <br>
+      <br>
+      ## Según los scripts de las clases, hay que aplicar los WOE,
+      agrupar variables,u otras cosas, antes de realizar el modelo de
+      regresión<br>
+      <br>
+      #Regresión<br>
+      diagnostico &lt;-<br>
+        glm(<br>
+          diagnosis ~ radius_mean + texture_mean + perimeter_mean +
+      area_mean + smoothness_mean + compactness_mean + concavity_mean +
+      concave.points_mean + symmetry_mean + fractal_dimension_mean,<br>
+          family = binomial(link = "logit"),<br>
+          datos<br>
+        )<br>
+      <br>
+      ## Pruebas Ómnibus<br>
+      ols_regress(diagnostico)<br>
+      <br>
+      lrtest(diagnostico)<br>
+      <br>
+      <br>
+      #########################<br>
+      #########################<br>
+      <br>
+      data("sleep75")<br>
+    </p>
+    <p><br>
+    </p>
+    <p><br>
+    </p>
+    <p><i>Saludos<br>
+        Fran</i><br>
+    </p>
+    <p><br>
+    </p>
+    <div class="moz-cite-prefix">El 16/11/2023 a las 11:34, Franco
+      Assanelli escribió:<br>
+    </div>
+    <blockquote type="cite"
+      cite="mid:e491df30-9625-4be4-8566-f3bb3ce27454@gmail.com">
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      <p>Estaba pensando, además, algo que te dije por wasap.</p>
+      <p>tenemos 3 bloques de variables:</p>
+      <ol>
+        <li>promedios de observaciones</li>
+        <li>errores estándar de observaciones</li>
+        <li>las, ahora no recuerdo bien, peores medidas ("worst")</li>
+      </ol>
+      <p>Entonces, a partir de las consignas (que adjunto al final del
+        presente mensaje), tenemos que eliminar variables que nos
+        resulten inviables para analizar esto. </p>
+      <p>Yo pienso que los errores estándar y las medidas "worst" las
+        podríamos descartar porque analizamos casos y no veo la utilidad
+        de analizar el error estándar de cada caso, ni la medida
+        "worst". Además, ¿cómo las comunicarías...?</p>
+      <p>Decime qué pensás como para ya hacer o terminar la primera
+        consigna.</p>
+      <p><img
+src="mailbox:///C:/Users/assaf/OneDrive/Desktop/TP%20Reg%20Log/Re%20%20TP%20Reg%20Log%20-%20Franco%20Assanelli%20(assafranco@gmail.com)%20-%202023-11-16%201134.eml?number=0&amp;header=quotebody&amp;part=1.2.2&amp;filename=23CCq77Rh1wTP5W8.png"
+          alt="" moz-do-not-send="true"></p>
+      <p><br>
+      </p>
+      <div class="moz-cite-prefix">El 16/11/2023 a las 11:26, Franco
+        Assanelli escribió:<br>
+      </div>
+      <blockquote type="cite"
+        cite="mid:4816690a-7d13-491d-b0f4-64fc069f5ba7@gmail.com">
+        <meta http-equiv="content-type"
+          content="text/html; charset=UTF-8">
+        <p>Nico, cómo andás?</p>
+        <p>Los profes me contestaron que la prueba ómnibus es la prueba
+          de razón de verosimilitud pero hecha según añadidura de
+          variables una por una , en bloques y entre constante y modelo
+          completo. Ahora te adjunto: </p>
+        <ol>
+          <li>fragmento del Kutner que explica sobre la prueba de razón
+            de veros., </li>
+          <li>un ppt que está en el aula v.</li>
+          <li>el mail del profe</li>
+        </ol>
+        <p><img
+src="mailbox:///C:/Users/assaf/OneDrive/Desktop/TP%20Reg%20Log/Re%20%20TP%20Reg%20Log%20-%20Franco%20Assanelli%20(assafranco@gmail.com)%20-%202023-11-16%201134.eml?number=0&amp;header=quotebody&amp;part=1.2.3&amp;filename=WYXxm0ODjxHwyLEj.png"
+            alt="" class="" moz-do-not-send="true"></p>
+        <p>Saludos<br>
+          Fran<br>
+        </p>
+      </blockquote>
+    </blockquote>
+  </body>
+</html>
+
+--------------PWMCgIIvS7dqoACAp3icf0yE--
