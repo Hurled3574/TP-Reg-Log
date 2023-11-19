@@ -1,0 +1,10 @@
+"0",""
+"0","download.file(""https://archive.ics.uci.edu/static/public/17/breast+cancer+wisconsin+diagnostic.zip"", ""data/breast+cancer+wisconsin+diagnostic.zip"")"
+"2","Warning: URL https://archive.ics.uci.edu/static/public/17/breast+cancer+wisconsin+diagnostic.zip: cannot open destfile 'data/breast+cancer+wisconsin+diagnostic.zip', reason 'No such file or directory'"
+"2","Warning: download had nonzero exit status"
+"0","unzip(""data/breast+cancer+wisconsin+diagnostic.zip"", exdir = ""data"")"
+"2","Warning: error 1 al extraer del archivo zip"
+"0","cmama <- read.csv (""data/wdbc.data"", header = FALSE)"
+"2","Warning: no fue posible abrir el archivo 'data/wdbc.data': No such file or directory"
+"2","Error in file(file, ""rt"") : no se puede abrir la conexión
+"
