@@ -136,6 +136,7 @@ lrtest(modelo_aic, modelo_aic_b2)
 lrtest(modelo_aic, modelo_aic_b3)
 lrtest(modelo_aic, modelo_aic_c)
 
+#Tablas ANOVA etc.
 
 
 #########################
