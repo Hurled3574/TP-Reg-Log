@@ -1,0 +1,623 @@
+#################################
+#####  Series de Tiempo
+####    Modelo ARIMA
+#################################
+
+#########################
+#### Seteo y cargas  ####
+#########################
+
+#Seteo y carga de librerías####
+{setwd("C:/Users/carlo/Dropbox/Archivos de la Facultad/FAUBA/Econometria/2022")
+  
+#Limpiamos todo y seteamos
+rm(list=ls())
+oldpar<-par(no.readonly = TRUE)
+options("scipen"=999, "digits"=4)
+
+
+#####################################
+#### Instalación y carga         ####
+####  de la librerías necesarias ####
+#####################################
+
+#Librerías
+library("tseries")     #Para el adf.test,KPSS
+library("forecast")    #para hacer pronósticos
+library("urca")        #Para tests de raíz unitaria
+library("knitr")
+library("kableExtra")  #Para hacer las tablas lindas
+library("zoo")         #Para armar el eje tiempo
+library("readxl")
+library("lmtest")      #Para la tabla de coeficientes ARIMA
+library("series")      #Para las gráficas
+library("kableExtra")  #Para imprimir las tablas
+}
+
+#############################################
+####  Funciones creadas que vamos a usar ####
+####  en la sintaxis                     ####
+#############################################
+
+#Para hacer los graficos de la serie, el ACF y PACF
+gserie<-function(x,lag=48,frec=4){
+  if(class(x)!="ts")stop("El objeto no es una serie de tiempo")
+  par(mfrow=c(3,1),mar=c(3,3,3,4),mgp=c(1.5,0.6,0)) 
+  n<-length(x)  
+  lim<-1.96*sqrt(1/n)
+  plot.ts(x, main=dimnames(x)[[2]], xlab="Tiempo", ylab="Valores",col="red",xaxs="i",lwd=2)
+  
+  par(mgp=c(1.5,0.4,0))
+  plot(acf(x,type="correlation",lag.max = lag,plot = F)
+       ,lwd=2,xaxt="n",col=ifelse(abs(acf(x,plot = F,lag.max = lag)$acf)>lim,"green4","red"),type="h",
+       ylab="ACF",xlab="Retardos",main="Correlograma Simple")
+  
+  axis(1,at=seq(0,lag,by=2)/frec,labels = seq(0,lag,by=2))
+  
+  par(mgp=c(1.5,0.4,0))
+  plot(pacf(x,type="correlation",lag.max = lag,plot = F)
+       ,lwd=2,xaxt="n",col=ifelse(abs(pacf(x,plot=F,lag.max = lag)$acf)>lim,"green4","red"),type="h",
+       ylab="PACF",xlab="Retardos",main="Correlograma Parcial")
+  
+  axis(1,at=seq(1,lag-1,by=2)/frec,labels = seq(1,lag-1,by=2))
+}
+
+#Estadistico Box-Pierce y Ljung-Box para los datos
+prueba_Q<-function(x,l=20)
+{
+  if(class(x)[1]=="Arima" | class(x)[1]=="ARIMA" |class(x)[1]=="forecast_ARIMA"){
+    gl<-sum(coef(x)!=0)
+    a<-data.frame(matrix(0,nrow=l-gl,ncol=5))
+    colnames(a)<-c("Retardos","LB","Pv- LB","BP","PV-BP")
+    a$Retardos<-(1+gl):l
+    for (i in 1:(l-gl) ){
+      a$LB[i]<-round(Box.test(x$residuals,i+gl,type = "Ljung-Box",fitdf = gl)$statistic,2)
+      a$`Pv- LB`[i]<-round(Box.test(x$residuals,i+gl,type = "Ljung-Box",fitdf = gl)$p.value,5)
+      a$BP[i]<-round(Box.test(x$residuals,i+gl,type = "Box-Pierce",fitdf = gl)$statistic,4)
+      a$`PV-BP`[i]<-round(Box.test(x$residuals,i+gl,type = "Box-Pierce",fitdf = gl)$p.value,4)
+    }
+  } else {
+    a<-data.frame(matrix(0,nrow=l,ncol=5))
+    colnames(a)<-c("Retardos","LB","Pv- LB","BP","PV-BP")
+    a$Retardos<-1:l
+    for (i in 1:l){
+      a$LB[i]<-round(Box.test(x,i,type = "Ljung-Box")$statistic,4)
+      a$`Pv- LB`[i]<-round(Box.test(x,i,type = "Ljung-Box")$p.value,7)
+      a$BP[i]<-round(Box.test(x,i,type = "Box-Pierce")$statistic,4)
+      a$`PV-BP`[i]<-round(Box.test(x,i,type = "Box-Pierce")$p.value,7)
+    }
+  }
+  return(a)
+}
+
+gresiduos<-function(m){
+  layout(matrix(c(1,1,2,3),nrow = 2,byrow = T))
+  par(mar=c(3,3,3,2))
+  n<-length(m$nobs)  
+  lim<-1.96*sqrt(1/n)
+  plot(m$residuals,lwd=2,col="blue",main="Analisis de Residuales del Modelo",ylab="Observado")
+  abline(h=0,col="red",lty=2)
+  plot(acf(m$residuals,type="correlation",lag.max = 24,plot = F)
+       ,lwd=2,xaxt="n",col=ifelse(acf(m$residuals,plot = F)$acf>lim,"green4","red"),type="h",
+       ylab="ACF",xlab="Retardos",main="Correlograma Simple")
+  
+  axis(1,at=seq(0,24,by=2),labels = seq(0,24,by=2))
+  
+  hist(m$residuals,breaks = 20,probability = T,main="Histograma de los residuos",col="deepskyblue",xlab="Residuos")
+  li<-min(m$residuals)
+  ls<-max(m$residuals)
+  curva<-seq(li,ls,length.out=601)
+  lines(curva,dnorm(curva,mean=mean(m$residuals),sd=sd(m$residuals)),col="red",lwd=2)
+  k<-jarque.bera.test(m$residuals)
+  legend("topright",legend = c("Jarque-Bera",
+                               paste("Estadistico = ",round(k$statistic,2)),paste("PV =",round(k$p.value,3))),bty="n")
+}
+
+########################################
+####  Simulacion de procesos AR(p)  ####
+########################################
+
+set.seed(123)
+phi1<- 0.65
+phi2<- 0.32
+cons=0
+Y[1]=Y[2]=0
+
+{
+Y=rep(0,1000)                                 
+e=rnorm(n=1000,0,1)*2                       
+
+for (i in 3:1000) Y[i]=cons+phi1*Y[i-1]+phi2*Y[i-2]+e[i]   
+
+x<-arima(Y,order = c(2,0,0))
+coeftest(x)
+
+media_t<-cons/(1-phi1-phi2)
+media_e<-mean(Y)
+s_t1<-phi1/(1-phi2)
+s_t2<-phi1*s_t1+phi2
+s_t3<-phi1*s_t2+phi2*s_t1
+p_t1<-s_t1
+p_t2<-phi2
+p_t3<-0
+s_e1<-acf(Y,plot = F)$acf[2]
+s_e2<-acf(Y,plot = F)$acf[3]
+s_e3<-acf(Y,plot = F)$acf[4]
+p_e1<-pacf(Y,plot = F)$acf[1]
+p_e2<-pacf(Y,plot = F)$acf[2]
+p_e3<-pacf(Y,plot = F)$acf[3]
+
+c<-data.frame(Media=c(media_t,media_e),"Phi-1"=c(phi1,x$coef[[1]]),"Phi-2"=c(phi2,x$coef[[2]]),"Phi-3"=c(0,0),
+              "ACS-1"=c(s_t1,s_e1),"ACS-2"=c(s_t2,s_e2),"ACS-3"=c(s_t3,s_e3)
+              ,"ACP-1"=c(p_t1,p_e1),"ACP-2"=c(p_t2,p_e2),"ACP-3"=c(p_t3,p_e3),check.names = F)
+rownames(c)<-c("Teorico","Simulado")
+kable(round(c,3),align="c",caption = "Principales Coeficientes")%>%
+  kable_styling(bootstrap_options=c("striped","borderer","condensed"), full_width = F)
+}
+
+#Gráfico de los datos
+{oldpar<-par(no.readonly = TRUE)
+ww<-matrix(c(1,1,2,3),2,2,byrow=TRUE)
+layout(ww)
+par(mar=c(2,3,2,2),mgp=c(0,0.6,0))
+plot.ts(Y,main="", lwd=2,col="red",xlab="",ylab="")
+title(main = bquote(paste("Proceso AR(2) con ",phi[1]," = ",.(phi1)," , ",phi[2]," = ",.(phi2), " y constante = ",.(cons))),line = 0.6,font=2)
+plot(acf(Y,plot=F),main="",ylab="",xlab="",lwd=2,col="blue")
+title(main = "Autocorrelacion Simple",line = 0.5)
+plot(pacf(Y,plot=F),main="",ylab="",xlab="",lwd=2,col="green4")
+title(main = "Autocorrelacion Parcial",line = 0.5)
+par(oldpar)
+}
+
+########################################
+####  Simulación de procesos MA(q)  ####
+########################################
+
+set.seed(123)
+theta1= -0.6
+theta2<-0.4
+cons=0
+
+{
+Y=rep(0,1000)                                 
+e=rnorm(n=1000,0,1)*2                       
+                                     
+for (i in 3:1000) Y[i]=-theta1*e[i-1]+-theta2*e[i-2]+e[i]   
+
+x<-arima(Y,order = c(0,0,2))
+coeftest(x)
+
+media_t<-cons
+media_e<-mean(Y)
+s_t1<-(-theta1*(1-theta2))/(1+theta1^2+theta2^2)
+s_t2<-(-theta2)/(1+theta1^2+theta2^2)
+s_t3<-0
+p_t1<-0.267
+p_t2<--0.36
+p_t3<-0.237
+s_e1<-acf(Y,plot = F)$acf[2]
+s_e2<-acf(Y,plot = F)$acf[3]
+s_e3<-acf(Y,plot = F)$acf[4]
+p_e1<-pacf(Y,plot = F)$acf[1]
+p_e2<-pacf(Y,plot = F)$acf[2]
+p_e3<-pacf(Y,plot = F)$acf[3]
+
+c<-data.frame(Media=c(media_t,media_e),"Theta-1"=c(-theta1,x$coef[[1]]),"Theta-2"=c(-theta2,x$coef[[2]]),"Theta-3"=c(0,0),
+              "ACS-1"=c(s_t1,s_e1),"ACS-2"=c(s_t2,s_e2),"ACS-3"=c(s_t3,s_e3)
+              ,"ACP-1"=c(p_t1,p_e1),"ACP-2"=c(p_t2,p_e2),"ACP-3"=c(p_t3,p_e3),check.names = F)
+rownames(c)<-c("Teorico","Simulado")
+kable(round(c,3),align="c",caption = "Principales Coeficientes")%>%
+  kable_styling(bootstrap_options=c("striped","borderer","condensed"), full_width = F)
+}
+
+{
+oldpar<-par(no.readonly = TRUE)
+ww<-matrix(c(1,1,2,3),2,2,byrow=TRUE)
+layout(ww)
+par(mar=c(2,3,2,2),mgp=c(0,0.6,0))
+plot.ts(Y,main="", lwd=2,col="red",xlab="",ylab="")
+title(main = bquote(paste("Proceso MA(1) con ",Theta[1]," = ",.(theta1)," y constante = ",.(cons))),line = 0.6,font=2)
+plot(acf(Y,plot=F),main="",ylab="",xlab="",lwd=2,col="blue")
+title(main = "Autocorrelacion Simple",line = 0.5)
+plot(pacf(Y,plot=F),main="",ylab="",xlab="",lwd=2,col="green4")
+title(main = "Autocorrelacion Parcial",line = 0.5)
+par(oldpar)
+}
+
+###########################
+####  Procesos Mixtos  ####
+###########################
+
+set.seed(123)
+phi1<- 0.6
+theta1<- -0.6
+Y=rep(0,1000)                                 
+e=rnorm(n=1000,0,1)*2                       
+Y[1]=0
+cons=0                                     
+for (i in 2:1000) Y[i]=phi1*Y[i-1]-theta1*e[i-1]+e[i]
+
+x<-arima(Y,order = c(1,0,1))
+coeftest(x)
+
+media_t<-cons
+media_e<-mean(Y)
+s_t1<-((phi1-theta1)*(1-phi1*theta1))/(1+theta1^2-2*theta1*phi1)
+s_t2<-phi1*s_t1
+s_t3<-phi1*s_t2
+p_t1<-s_t1
+p_t2<-(s_t2-s_t1^2)/(1-s_t1^2)
+p_t3<-(s_t3-(p_t1*(1-p_t2)*s_t2+p_t2*s_t1)) / (1-p_t1*(1-p_t2)*s_t1-p_t2*s_t2)
+s_e1<-acf(Y,plot = F)$acf[2]
+s_e2<-acf(Y,plot = F)$acf[3]
+s_e3<-acf(Y,plot = F)$acf[4]
+p_e1<-pacf(Y,plot = F)$acf[1]
+p_e2<-pacf(Y,plot = F)$acf[2]
+p_e3<-pacf(Y,plot = F)$acf[3]
+
+c<-data.frame(Media=c(media_t,media_e),"Phi-1"=c(phi1,x$coef[[1]]),"Theta-1"=c(-theta1,x$coef[[2]]),"Theta-3"=c(0,0),
+              "ACS-1"=c(s_t1,s_e1),"ACS-2"=c(s_t2,s_e2),"ACS-3"=c(s_t3,s_e3)
+              ,"ACP-1"=c(p_t1,p_e1),"ACP-2"=c(p_t2,p_e2),"ACP-3"=c(p_t3,p_e3),check.names = F)
+rownames(c)<-c("Teorico","Simulado")
+kable(round(c,3),align="c",caption = "Principales Coeficientes")%>%
+  kable_styling(bootstrap_options=c("striped","borderer","condensed"), full_width = F)
+
+oldpar<-par(no.readonly = TRUE)
+ww<-matrix(c(1,1,2,3),2,2,byrow=TRUE)
+layout(ww)
+par(mar=c(2,3,2,2),mgp=c(0,0.6,0))
+plot.ts(Y,main="", lwd=2,col="red",xlab="",ylab="")
+title(main = bquote(paste("Proceso ARMA(1,1) con ",phi[1], " = ", .(phi1)," , ",Theta[1]," = ",.(theta1)," y constante = ",.(cons))),line = 0.6,font=2)
+plot(acf(Y,plot=F),main="",ylab="",xlab="",lwd=2,col="blue")
+title(main = "Autocorrelacion Simple",line = 0.5)
+plot(pacf(Y,plot=F),main="",ylab="",xlab="",lwd=2,col="green4")
+title(main = "Autocorrelacion Parcial",line = 0.5)
+par(oldpar)
+
+##############################
+#### Levantamos la base   ####
+#### y armamos los datos  ####
+##############################
+
+#Portal de datos del Ministerio de Economía
+#https://www.economia.gob.ar/datos/
+
+####Crustaceos 2008-2021
+x<-data.frame(read_xlsx("actividad_ied.xlsx",sheet = "1.21 Pesca",range = "D119:D174",col_names = F))
+colnames(x)<-c("Crustaceos")
+
+####Total Pesca 2008-2021
+x<-data.frame(read_xlsx("actividad_ied.xlsx",sheet = "1.21 Pesca",range = "E119:E174",col_names = F))
+colnames(x)<-c("Pesca")
+
+####Total Electricidad 2008-2021
+x<-data.frame(read_xlsx("actividad_ied.xlsx",sheet = "1.28 Electricidad",range = "B69:B124",col_names = F))
+colnames(x)<-c("Electricidad")
+
+####EMAE 2008-2021
+x<-data.frame(read_xlsx("actividad_ied.xlsx",sheet = "1.4.1 Emae BASE 2004",range = "B47:B102",col_names = F))
+colnames(x)<-c("EMAE")
+
+####Nafta Super 2008-2021
+x<-data.frame(read_xlsx("actividad_ied.xlsx",sheet = "1.13 Ventas",range = "N111:N166",col_names = F))
+colnames(x)<-c("Nafta")
+
+####Cemento 2008-2021
+x<-data.frame(read_xlsx("actividad_ied.xlsx",sheet = "1.13 Ventas",range = "P111:P166",col_names = F))
+colnames(x)<-c("Cemento")
+
+####GasOil 2008-2021
+x<-data.frame(read_xlsx("actividad_ied.xlsx",sheet = "1.13 Ventas",range = "AC111:AC166",col_names = F))
+colnames(x)<-c("GasOil")
+
+###############################################
+####  Análisis gráfico y de correlaciones  ####
+###############################################
+
+#Transformamos en serie de tiempo
+x<-ts(x,start=c(2008,1),frequency = 4)
+
+#Usamos la función creada
+gserie(x)
+
+#Pedimos los valores ahora de ACS y ACP para los primeros 20 periodos (p)
+#La lenta declinación del acf da la idea que no es estacionaria
+p<-20
+(acs<-acf(x,lag.max = p,plot = F))
+pacf(x,plot=FALSE)
+
+#Esta función calcula el Ljung-Box y el Box-Pierce con sus PV para "l" lags tanto para los datos
+#como para los residuos de un arima corregidos por los gl
+prueba_Q(x,20)
+
+#Calculo manual del Ljung-Box
+{n<-length(x)
+#Cantidad de lags a analizar
+Ljung<-data.frame(Lags=1:p,Correlacion=acs$acf[2:(p+1)],Estadistico=NA,LB=NA,PV=NA)
+for(i in 1:p){
+Ljung$Estadistico[i]<-Box.test(x,lag = i,type = "Ljung-Box")$statistic
+Ljung$LB[i]<-(Ljung$Correlacion[i]^2)/(n-i)   
+}
+Ljung$LB<-cumsum(Ljung$LB)*n*(n+2)
+Ljung$PV<-round(pchisq(Ljung$LB,1:p,lower.tail = F),8)
+
+Ljung
+}
+
+########################################
+####  Análisis de estacionariedad   ####
+########################################
+
+#Test de Dickey-Fuller para estacionariedad, "select lags" hace que no tengamos que trabajar esta parte
+summary(ur.df(x,type = c("trend"),selectlags = "AIC"))
+
+#Definimos nosotros mismos los lags
+summary(ur.df(x,type = c("trend"),lags = 0))
+
+summary(ur.df(x,type = c("drift"),lags = 0))
+
+summary(ur.df(x,type = c("none"),lags = 0))
+
+#Podemos definir nosotros la cantidad de la lags
+summary(ur.df(x,type = c("trend"),lags = 2))
+
+#Realizo el test en primeras diferencias
+summary(ur.df(diff(x),type = c("drift"),lags = 1))
+
+#Usando el paquete "fUnitRoots", vemos los críticos para ADF de DF para N=50 que es lo que da el summary
+#"ct" es constante + tendencia, "t" es el estadístico o puede ser "n" que es el normalizado
+library("fUnitRoots")
+
+#Vemos la tabla de críticos, "ct" es constante + tendencia y t es el estadístico t (puede ser n)
+adfTable("ct","t")
+
+#Vemos la tabla de McKinnon
+unitrootTable("ct","t")
+
+#Vemos los cuantiles criticos
+qadf(c(0.01,0.05,0.10),  #Cuantiles a mostrar
+     N=50,               #Tamaño de la muestra
+     trend="ct",         #ct=cons+tend ,t=tend, nc=no const 
+     statistic="t")      #t=estadistico t, n=normalizado
+
+#Vemos los críticos para McKinoon (1991) para n=50
+#Para ver McKinnon 2010 usar "Cointegracion.html" con N=1
+qunitroot(c(0.01,0.05,0.10),N=50, trend="ct", statistic="t")
+
+#Vemos los PV
+padf(q = 1.2836, N= 100 , trend = "ct", statistic = "t")
+
+punitroot(1.2836, N = 100, trend = "nc", statistic = "t")
+
+
+####################################
+####  Demostración del test DF  ####
+####################################
+
+#Diferenciamos la variable original
+z<-diff(x)
+z.diff<-z
+
+#Aunque tomemos desde la primera observacion, la primera es la rezagada porque la diferencia es entre segunda
+#menos primera, por ende la rezagada de segunda es la primera
+z.lag.1<-x[1:47]
+
+#Vemos la regresion
+summary(lm(z.diff~z.lag.1))
+
+#Vemos el test
+summary(ur.df(x,type = c("drift"),lags = 0))
+
+#Con un lags
+#Variable dependiente en primera diferencia desde la segunda observaciones
+z.diff<-z[2:47,]
+
+#Variable original desde la segunda observacion
+z.lag.1<-x[2:47]
+
+#Variable diferencia lageada al tomar de la primera (respecto de z.diff)
+z.diff.lag<-z[1:46,]
+summary(lm(z.diff~z.lag.1+z.diff.lag))
+
+#Test con un lags y tendencia
+summary(ur.df(x,type = c("drift"),lags = 1))
+
+r<-cbind(z.diff,z.lag.1,z.diff.lag);r
+
+##Ahora los hacemos con tendencia
+#Creamos la tendencia arrancando del 2 porque es el primer valor que tomamos de Z lags
+tt<-2:47
+
+summary(lm(z.diff~z.lag.1+tt+z.diff.lag))
+
+######################
+#### Otros tests  ####
+######################
+
+#Test KPSS con constante y tenencia, H0 la serie es estacionaria en tendencia
+#"tau" es para probar con tendencia, "mu" con constante
+summary(ur.kpss(x,type = "tau",lags = "long"))
+
+#Test de Phillips-Perron, usa los mismos criticos que ADF
+summary(ur.pp(x,type = c("Z-tau"), model = c("trend")))
+qunitroot(c(0.01,0.05,0.10),N=50, trend="ct", statistic="t")
+
+######################
+#### Modelización ####
+######################
+
+#Significado de la constante
+#https://robjhyndman.com/hyndsight/arimaconstants/
+
+#Como tiene tendencia, creamos la variable tiempo
+tiempo<-seq(1,length(x),by=1)
+
+#Modelizamos la serie, xreg es la parte tendencial con la funcion "arima"
+arima<-arima(x, 
+             order=c(2,0,0),                               #Orden ARIMA
+             xreg=tiempo,                                  #Variables exogenas
+             include.mean= T,                              #Intercept es en realidad la media
+             seasonal = list(order = c(0,0,0), period=4))  #Orden estacional
+
+coeftest(arima)
+
+#En tanto dentro del modelo existe algún termino no significativo, puedo eliminarlo con fixed "0"
+arima<-arima(x,order=c(5,0,0)
+             ,fixed=c(NA,NA,0,0,NA,NA,NA),      #Definir con 0 que coeficiente NO estimar
+              include.mean = TRUE,xreg=tiempo)
+
+coeftest(arima)
+
+
+#Esta función es mas completa ya que permite poner por fuera la tendencia
+#Vemos diferentes modelos
+arima2<-Arima(x,order=c(2,0,0),
+              include.mean = TRUE)       #Media de la serie
+
+coeftest(arima2)
+
+#Un argumento para la media y la tendencia
+arima2<-Arima(x,order=c(2,0,0),
+              include.drift =  TRUE)    #Media y tendencia
+
+coeftest(arima2)
+
+#Un argumento para la media y la tendencia
+arima2<-Arima(x,order=c(2,0,0),
+              include.constant =  TRUE)   #Media de la serie
+
+coeftest(arima2)
+
+#Vemos una función automática de modelización
+summary(ajustear1c<-auto.arima(x))
+
+#####################################
+####   Análisis de los residuos  ####
+#####################################
+
+#Vemos LB y BP de ambos modelos
+prueba_Q(arima2,20)
+prueba_Q(arima,20)
+
+#Graficos combinados de los residuos
+checkresiduals(arima2)
+checkresiduals(arima)
+
+#Grafico de los residuos, lo hacemos con probabilidades para poner la normal encima
+gresiduos(arima)
+
+#Test de Normalidad sobre los residuos
+jarque.bera.test(arima2$residuals)
+jarque.bera.test(arima$residuals)
+
+
+##################################
+####   Prediccion del modelo  ####
+##################################
+
+#Para hacer el forecast
+#https://github.com/robjhyndman/forecast/issues/682
+#Creamos los valores futuros de xreg
+f<-49:58
+#Creamos el modelo con todos los componentes
+fit2 <- Arima(x, model=arima2, xreg=tiempo)
+#Hacemos el forecast para los valores futuros
+forecast(fit2, xreg=f)
+
+#Hacemos el grafico
+plot(forecast(fit2,h=10,xreg=f))
+
+#Cuando el objeto se creo con "arima", se usa esta funcion
+g<-1:10
+predict(arima,h=10,newxreg=g)
+
+#El include.mean sirve para que simule sin diferenciar, sin el tira error
+model <- Arima(ts(rnorm(100),freq=4), order=c(1,0,1), seasonal=c(0,0,0),
+               fixed=c(phi=0.5, theta=-0.4),include.mean = F)
+foo <- simulate(model, nsim=1000)
+fit <- Arima(foo, order=c(1,0,1), seasonal=c(0,0,0),include.constant = F)
+plot.ts(foo)
+coeftest(fit)
+
+####Simulaciones####
+model <- Arima(ts(rnorm(100),freq=4), order=c(1,0,1), seasonal=c(0,0,0),
+               fixed=c(phi=0.5, theta=-0.4,mean=2),include.mean = T)
+
+###################################################
+####  Calculo Manual de los valores ajustados  ####
+###################################################
+
+#sacado de https://stats.stackexchange.com/questions/110589/arima-with-xreg-rebuilding-the-fitted-values-by-hand/508338#508338
+#y "Problemas conceptuales al hacer arima.pdf"
+
+#Ejemplo con datos reales
+library("readxl")
+base<-read_xlsx("C:/Users/carlo/Downloads/Temporales/DemandaElectricidad.xlsx",range = "D1:D49")
+tiempo<-1:48
+x<-ts(base,start=c(2008,1),frequency = 4)
+
+f <- Arima(x, order = c(2,0,0), xreg = tiempo, include.constant =T,fixed=c(0,NA,NA,NA)) # Fits a linear regression with AR(2) error structure
+summary(f)
+n <- f$x - f$coef[4] * f$xreg # Errors from linear regression component
+n_l1 <- lag(n, -1)
+n_l2 <- lag(n, -2)
+
+#Lo que la sintaxis da como "intercept" es en realidad la media del proceso, 
+f$coef[3]
+mean(x)
+
+#por lo tanto debemos transformar ese valor
+r<-f$coef[3]*(1-f$coef[1]-f$coef[2]);r
+
+#Ahora si lo sumamos
+n_fit <- (f$coef[1] * n_l1) + (f$coef[2] * n_l2) + r
+pred <-  n_fit[c(1:48)] + (f$coef[4] * f$xreg)[c(3:50)] # n_fit elements 1:48 are t=3,...,50; this matches f$xreg elements 3:50
+pred # View manually fitted values
+fitted(f)[c(3:50)] # View fitted values from f object
+round(pred, 14) == round(fitted(f)[c(3:50)], 14)
+round(pred, 14) - round(fitted(f)[c(3:50)], 14)
+
+#Otra manera de realizar el calculo, sin sacar de cada observacion la tendencia
+x_1<-lag(x,-1)
+x_2<-lag(x,-2)
+phi_1<-f$coef[1]
+phi_2<-f$coef[2]
+b<-f$coef[4]
+t<-1:50
+
+est<-r + phi_1*x_1[1:48] + phi_2 * x_2[1:48] + b * t[3:50] - phi_1 * b * t[2:49]  - phi_2 * b * t[1:48]
+
+round(est, 14) == round(fitted(f)[c(3:50)], 14)
+round(est, 14) - round(fitted(f)[c(3:50)], 14)
+
+
+
+
+function (q, N = Inf, trend = c("nc", "c", "ct"), statistic = c("t", 
+                                                                "n")) 
+{
+  trend <- match.arg(trend)
+  statistic <- match.arg(statistic)
+  stopifnot(length(N) == 1)
+  X = adfTable(trend = trend, statistic = statistic)
+  if (N < 500) {
+    finiteX = cbind(expand.grid(x = X$x, y = X$y), z = as.vector(X$z))
+    X = finiteX[is.finite(finiteX[, 1]), ]
+    y = X[, 1]
+    z = X[, 2]
+    x = X[, 3]
+    xo = q
+    yo = rep(N, times = length(q))
+    p = linearInterpp(x, y, z, xo = xo, yo = yo)[, 3]
+  }
+  else {
+    x = X$z["Inf", ]
+    y = X$y
+    p = approx(x, y, xout = q)$y
+  }
+  names(p) = as.character(q)
+  attr(p, "control") <- c(N = N)
+  p
+}
+
+trend
