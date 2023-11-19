@@ -69,9 +69,11 @@ vif (modelo)
 ##Medidas remedio: Componentes Principales? Regresión Ridge?
 # Si PCS, entonces agrupamos las medidas de tamaño: radio, perimetro y área en un índice que se denomine "tamaño"
 
-PCA(cmama2)
+PCA(cmama2[,-1])
+PCA(cmama2[,-1])$eig
+PCA(cmama2[,-1])$var
 
-PCA(cmama2)$call
+tamaño <- 
 
 ## Pruebas Ómnibus
 

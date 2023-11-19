@@ -73,6 +73,8 @@ PCA(cmama2[,-1])
 PCA(cmama2[,-1])$eig
 PCA(cmama2[,-1])$var
 
+tamaño <- 
+
 ## Pruebas Ómnibus
 
 print(stepwise(modelo))
