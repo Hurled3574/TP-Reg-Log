@@ -1,0 +1,51 @@
+To fit a reduced model that contains only the response variable and the intercept, you can use the `glm()` function in R with the formula `y ~ 1`, where `y` is the name of your response variable. This will estimate the intercept parameter, which is the log-odds of the response when all the predictors are zero. You can also use the `summary()` function to see the coefficient, standard error, z-value, and p-value of the intercept.
+
+For example, suppose you have a dataset called `data` with a binary response variable called `y` and two predictor variables called `x1` and `x2`. You can fit the full model and the reduced model as follows:
+
+```r
+# Fit the full model
+model_full <- glm(y ~ x1 + x2, data = data, family = binomial)
+
+# Fit the reduced model
+model_reduced <- glm(y ~ 1, data = data, family = binomial)
+
+# See the summary of the reduced model
+summary(model_reduced)
+```
+
+The output will show something like this:
+
+```r
+Call:
+glm(formula = y ~ 1, family = binomial, data = data)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-1.4142  -1.4142  -1.4142   0.7071   0.7071  
+
+Coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -0.6931     0.1179  -5.879 4.11e-09 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 138.63  on 99  degrees of freedom
+Residual deviance: 138.63  on 99  degrees of freedom
+AIC: 140.63
+
+Number of Fisher Scoring iterations: 4
+```
+
+This means that the intercept is estimated to be -0.6931, which corresponds to a probability of 0.3333 for the response variable. The p-value of the intercept is very small, which indicates that it is significantly different from zero.
+
+You can also compare the full model and the reduced model using a likelihood ratio test, as explained in [this article](^4^).
+
+Source: Conversation with Bing, 11/19/2023
+(1) How to Interpret glm Output in R (With Example) - Statology. https://www.statology.org/interpret-glm-output-in-r/.
+(2) How to set up an intercept-only mixed logistic regression in order to .... https://stats.stackexchange.com/questions/331505/how-to-set-up-an-intercept-only-mixed-logistic-regression-in-order-to-test-for-d.
+(3) r - Significance of intercept only in Logistic Regression analysis .... https://stats.stackexchange.com/questions/427106/significance-of-intercept-only-in-logistic-regression-analysis.
+(4) How to run 'lm' function in R, but with a formula with only an intercept?. https://stats.stackexchange.com/questions/211072/how-to-run-lm-function-in-r-but-with-a-formula-with-only-an-intercept.
+(5) R: Generalized Linear Models with random intercept. https://search.r-project.org/CRAN/refmans/glmmML/html/glmmML.html.
+(6) github.com. https://github.com/1ambda/data-analysis/tree/91a233b4d07dac417d89bd2dfeac2c9b5e8f40cb/analytics-edge%2Fweek3%2FREADME.md.

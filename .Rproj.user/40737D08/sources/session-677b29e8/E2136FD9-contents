@@ -1,0 +1,283 @@
+#############################
+####   Autocorrelación   ####
+#############################
+
+#Datos del libro de Greene en paquete "AER"
+#https://rdrr.io/cran/AER/man/Greene2003.html
+
+#Datos de las ultimas versiones de Greene (7 y 8)
+#https://pages.stern.nyu.edu/~wgreene/Text/econometricanalysis.htm
+
+#########################
+#### Seteo y cargas  ####
+#########################
+
+#Limpiamos todo lo que haya anterior
+{rm(list=ls())
+  
+#Definimos el path y seteamos#  
+setwd("C:/Users/carlo/Dropbox/Archivos de Apuntes/Regresion Lineal/Autocorrelacion")
+oldpar<-par(no.readonly = TRUE)
+options(scipen=99, digits=6)
+  
+#####################################
+#### Instalación y carga         ####
+####  de la librerías necesarias ####
+#####################################
+  
+#Cargamos las librerias necesarias
+library("lmtest")
+library("orcutt")     #Para Cochrane-Orcutt
+library("estgeneral") #Para descriptiva
+library("olsrr")      #Para las salidas de regresion
+library("car")        #Otra versión del DW
+library("regresion")  #para gráfico DW
+library("wooldridge") #Para la base
+library("prais")      #Para Prais-Winsten
+}
+
+##############################
+#### Levantamos la base   ####
+#### y armamos los datos  ####
+##############################
+
+#Usamos la base Phillips de Wooldridge Ejemplo  pag 390
+
+datos <- phillips
+attach(datos)
+
+#Las variables a usar son
+# unem  = desempleo
+# inf   = inflacion anual 
+# inf-1 = inflacion en el periodo anterior
+# Con estas variables se crea
+# cinf  = inf - inf-1  (Diferencia entre la inflacion anual)
+
+#################################
+####  Análisis Exploratorio  ####
+####    de la variables      ####
+#################################
+
+#Graficamos las variables
+plot(year,cinf,type="l",lwd=2,col="red",xaxp=c(1948,2003,11),main="Variacion de la inflacion")
+abline(h=0,lwd=2,col="green4")
+
+plot(year,unem,type="l",lwd=2,col="red",xaxp=c(1948,2003,11),main="Tasa de Desempleo")
+
+#Aqui se ve mas claramente la relacion entre las variables
+plot(unem,cinf,pch=19, col="red",main="Grafico de la inflacion y el desempleo")
+
+##################################
+####  Regresión de los datos  ####
+##################################
+
+#Hacemos regresión entre 1949 y 1996 y vemos la salida
+reg<-lm(cinf~unem, data = datos[2:49,])
+ols_regress(reg)
+
+
+  ###################################################
+####  Análisis gráfico de la autocorrelacion   ####
+###################################################
+
+#Hacemos un gráfico con los residuos por Año y los residuos standart
+#xaxp define cuantos valores poner en el eje "desde 1999 hasta 2014, 15 valores"
+{par(mfrow=c(2,1),mar=c(3,3,3,2))
+  plot(year[2:49],reg$residuals,lwd=2,type="l",col="green4",main="Residuos",xaxp=c(1949,1997,8))
+  abline(h=0,lwd=2,col="red")
+  plot(year[2:49],rstandard(reg),lwd=2,type="l",col="green4",main="Residuos Standart",xaxp=c(1949,1997,8))
+  abline(h=0,lwd=2,col="red")}
+
+##################################
+#### Prueba t de correlación  #### 
+####  serial de orden AR(1)   ####
+##################################
+
+#Esta prueba consiste simplemente en regresar e en t contra e en t-1
+#suponiendo que los regresores son exogenos (el regresor es et-1)
+
+#Creamos la variable lageada, como no es "ts", lo hacemos asi
+e <- reg$residuals[1:48]
+et1 <- reg$residuals[2:49]
+
+#Hacemos la regresión sin ordenada
+summary(lm(e ~ et1 -1))
+
+#El coeficiente ¿que representa? ¿que indica y cual es la conclusión?
+
+###################################
+####  Prueba de Durbin-Watson  ####
+###################################
+
+####Test de DW####
+#Corremos el test de Durbin Watson sobre la regresion a traves de una funcion existente
+(test.dw<-dwtest(reg))
+
+#Corremos otra funcion similar
+durbinWatsonTest(reg)
+
+###############################
+#### Durbin Watson Manual  ####
+###############################
+
+#Lo sacamos directo pero no se entiende mucho
+{n <- length(reg$residuals)
+num<-sum((reg$residuals[2:n]-reg$residuals[1:(n-1)])**2)
+den<-sum(reg$residuals**2)
+num/den
+}
+
+##################################
+#### Gráfico de Durbin-Watson ####
+##################################
+
+#Los valores de DL y DU ¿De que dependen?
+par(oldpar)
+graficodw(reg)
+
+######################################
+####  Metodo de Breusch-Godfrey   ####
+######################################
+
+#Este test es general para cuando las regresoras no son exogenas
+#Tiene un argumento que permite definir que hacer con las observaciones perdidas
+#si ponemos "ceros" el estadistico es n*R2, si eliminamos es (n-p)*R2
+
+#Order=3 determina tres retardos de residuos
+bg<-bgtest(reg,order=3);bg
+
+#Lo construimos nosotros armando una base con los valores rezagados
+{a<-data.frame(e,c(0,e[2:n-1]),c(0,0,e[3:n-2]),c(0,0,0,e[4:n-3]))
+  colnames(a)<-c("e","e-1","e-2","e-3")
+}
+
+#Hacemos la regresion y analizamos el R2 que servira como dato para la prueba y los comparamos con los coeficientes de la prueba BG
+{b<-lm(a$e ~ datos$unem[2:49] + a$`e-1` + a$`e-2` + a$`e-3`)
+  
+  #Armamos el estadístico LM=n*R2 primero generando los datos
+  #Cantidad de datos
+  nbg<-nrow(a)
+  
+  #Los grados de libertad son las variables residuos rezagadas
+  p<-ncol(a)-1
+  
+  #Calculamos el estadístico
+  bgc<-nbg*summary(b)$r.squared
+  
+  #Vemos el valor del estadistico
+  cat(paste("El valor del estadistico es",round(bgc,digits = 4)," con un P-Value de ",round(pchisq(bgc,p,lower.tail = FALSE),4)  ))
+}
+
+########################################
+#### Corrección de autocorrelacion  ####
+#### por MC Generalizados Factibles ####
+########################################
+
+#Este metodo se engloba dentro de MCG ya que para la estimación utiliza información respecto
+#de la relación entre los residuos al suponer que estos se generan a través de un proceso AR(1) y
+#ademas usa MCGF al estimar el valor del rho entre u y u(t-1).
+
+#################################
+####Metodo de Cochrane-Orcutt####
+#################################
+
+# ¿En que se basa este metodo? ¿Para que utiliza el rho?
+
+#Corremos el metodo de Cochrane-Orcutt, este ya da los coeficientes transformados, sale del paquete "orcutt".
+co<-cochrane.orcutt(reg , max.iter = 2, convergence = 0)
+
+#Vemos la regresion de los valores transformados
+summary(co)
+
+############################
+#### Calculo manual de  ####
+####  Cochrane-Orcutt   ####
+############################
+
+#Una vez obtenidos los residuos, calculamos el Rho, correlación entre las variables, donde tenemos tres formas:
+#Primera forma: Formula
+rho<-(sum(a$e * a$`e-1`))/sum(a$`e-1`**2);rho
+
+#Segunda Forma: tambien podemos hacer la regresion entre los residuos donde y=e en t y x= e en t-1, SIN B0 es decir sin ordenada
+#El "-1" indica que la regresion es por el origen y el coeficiente es el rho
+rho1<-lm(a$e ~ a$`e-1` - 1);rho1
+
+#Tercera forma: A través de la relación entre el DW y el Rho, NO ES EXACTO
+#dado que DW=2*(1-rho), entonces rho=1-dw/2
+rho2<-1-test.dw$statistic/2;rho2
+
+#Ahora transformamos los datos ,sacando de cada uno la parte correlacionada, empezamos con cinf
+CO <- data.frame(c=cinf[2:49]-rho*cinf[1:48],u=unem[2:49]-rho*unem[1:48])
+colnames(CO) <- c("cinf","unem")
+
+#Hacemos la regresión con los datos transformados
+reg1<-lm(cinf ~ unem ,data = CO)
+
+#Comparamos los obtenido
+stargazer::stargazer(reg,reg1, type="text",column.labels = c("Regresion","C- O"))
+
+#El coeficiente b1 queda igual pero debemos transformar el bo=b0*/(1-rho)
+coef(reg1)
+b0<-reg1$coefficients[1]/(1-rho);b0;reg1$coefficients[2]
+
+#Lo sacamos directo pero no se entiende mucho
+sum((reg1$residuals[2:(n-1)]-reg1$residuals[1:(n-2)])**2)/sum(reg1$residuals**2)
+
+################################
+####Método de Prais-Winstein####
+################################
+
+#La diferencia con CO es la forma en la que tratan el primer dato. En CO se pierde y PW transforma el dato
+#Ver Wooldridge pag 424
+
+pw<- prais_winsten(cinf~unem, data = datos[2:49,],index = "year")
+summary(pw)
+
+##############################
+#### Ejemplo comparativo  ####
+##############################
+
+#Ejercicio 20.9.2 Greene 7 Edicion pdf Pagina 968
+# Datos sobre las variables: https://pages.stern.nyu.edu/~wgreene/Text/econometricanalysis.htm
+# GASEXP/(GASP*POP) = Gasto per capita en combustible
+# Income  = Ingreso per capita
+# GasP    = Precio del combustible
+# PNC     = Precio del auto nuevo
+# PUC     = Precio del auto usado
+
+#Levantamos la base
+base<-read.csv("https://pages.stern.nyu.edu/~wgreene/Text/Edition7/TableF2-2.csv")
+
+pairs(base[,2:7])
+
+#Creamos una variable de tendencia
+tend<-1:52
+
+#Hacemos la regresion
+reg2<-lm(log(GASEXP/(GASP*POP))~log(INCOME)+log(GASP)+log(PNC)+log(PUC) + tend,data=base)
+summary(reg2)
+
+#Vemos el DW
+durbinWatsonTest(reg2)
+
+#Vemos el Breusch-Godfrey
+{bg <- bgtest(reg2,order = 5)
+bg
+}
+
+#Construimos algo para ver los lags y los PValue de los lags del test
+test <- data.frame(Coeficientes=bg$coefficients[7:11],Desvio= sqrt(diag(bg$vcov)[7:11]),
+                   Estadistico=bg$coefficients[7:11] /sqrt(diag(bg$vcov)[7:11])  )
+test
+
+#Hacemos el Cochrane-Orcutt
+(Coch <- cochrane.orcutt(reg2, max.iter = 500, convergence = 8))
+
+#Hacemos el Prais-Winsten
+pw<- prais_winsten(log(GASEXP/(GASP*POP)) ~ log(INCOME)+log(GASP)+log(PNC)+log(PUC) + tend , data = base , index = "YEAR")
+summary(pw)
+
+#Tabla Comparativa de estimaciones
+stargazer::stargazer(reg2,Coch,Coch, type="text",column.labels = c("Regresion","P-W","C-O"),dep.var.labels = "Combustible Promedio",
+                     coef = list(reg2$coefficients, pw$coefficients),
+                     se   = list(summary(reg2)$coefficients[,2], summary(pw)$coefficients[,2]) ,intercept.bottom = F  )

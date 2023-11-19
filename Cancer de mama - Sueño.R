@@ -74,29 +74,26 @@ PCA(cmama2[,-1])
 PCA(cmama2[,-1])$eig
 PCA(cmama2[,-1])$var
 
-mvarcovcmama2 <- var(cmama2[,-1])
+# Descartamos la agrupación de variables por componentes principales por problemas de explicación de las variables indexadas. En otras palabras, no era conveniente la agrupación por PCA
 
-eigen(mvarcovcmama2)
-
-comp1 <- eigen(mvarcovcmama2)$vectors[,1] %*% as.matrix(cmama2[,-1])
 
 ## Pruebas Ómnibus
 
 stepwise(modelo)
 
-# ols_regress (diagnostico)
-# 
-# lrtest (diagnostico)
+# La agrupación mediante método por pasos hacia adelante y hacia atrás nos llevó a obtener un conjunto de variables que podían explicar el diagnostico. ENtonces, el criterio de Akkaike nos fue útik para hallar tres variables que explicaban los tres tópicos principales que explicaban el diagnóstico y que reducían significativamente la colinealidad entre variables.
 
 ## Analisis de factores
 
 factanal(cmama2[,-1], 3)
 
+# Descartamos la agrupación de variables en Factores porque los agrupamientos no servían para explicar el diagnóstico ni comunicarlo
+
 #Regresión Ridge
 
 # ridge1 <- lm.ridge(diagnostico ~ radio_medio + textura_media + perimetro_medio + area_media + uniformidad_media + compactabilidad_media + concavidad_media + puntos_concavos_medios + simetria_media + dimension_fractal_media, cmama2, lambda = 0)
 
-# vif(ridge1, type = "predictor")
+# No realizamos regresión Ridge para evitar problemas de interpretación
 
 ##Por criterio de Akkaikke nos quedamos con el siguiente modelo que explica el diagnostico
 
@@ -105,6 +102,41 @@ modelo_aic <- glm(diagnostico ~ textura_media + area_media + puntos_concavos_med
 vif(modelo_aic)
 
 summary(modelo_aic)
+
+# Nueva exploración de los datos
+
+cmama3 <- cmama2[, c(1, 3, 5, 9)]
+
+scatterplotMatrix (cmama3, pch = 19)
+
+#Prueba omnibus
+
+modelo_aic
+
+modelo_aic_r1 <-
+  glm(diagnostico ~ textura_media, family = binomial(link = "logit"), cmama3)
+
+modelo_aic_r2 <- glm(diagnostico ~ area_media, family = binomial(link = "logit"), cmama3)
+
+modelo_aic_r3 <- glm(diagnostico ~ puntos_concavos_medios, family = binomial(link = "logit"), cmama3)
+
+modelo_aic_b1 <- glm(diagnostico ~ textura_media + area_media, family = binomial(link = "logit"), cmama3)
+
+modelo_aic_b2 <- glm(diagnostico ~ textura_media + puntos_concavos_medios, family = binomial(link = "logit"), cmama3)
+
+modelo_aic_b3 <- glm(diagnostico ~ area_media + puntos_concavos_medios, family = binomial(link = "logit"), cmama3)
+
+modelo_aic_c <- glm(diagnostico ~ 1, family = binomial(link="logit"), cmama3)
+
+lrtest(modelo_aic, modelo_aic_r1)
+lrtest(modelo_aic, modelo_aic_r2)
+lrtest(modelo_aic, modelo_aic_r3)
+lrtest(modelo_aic, modelo_aic_b1)
+lrtest(modelo_aic, modelo_aic_b2)
+lrtest(modelo_aic, modelo_aic_b3)
+lrtest(modelo_aic, modelo_aic_c)
+
+
 
 #########################
 #########################

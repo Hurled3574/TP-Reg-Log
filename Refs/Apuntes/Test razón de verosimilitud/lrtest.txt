@@ -1,0 +1,31 @@
+A likelihood ratio test is a statistical method to compare the goodness of fit of two nested models. A nested model is one that contains a subset of the predictor variables in the overall model. For example, if you have a model with four predictors, a nested model could be one with only two of those predictors.
+
+To perform a likelihood ratio test in R, you can use the `lrtest()` function from the `lmtest` package. This function takes two or more models as arguments and returns the Chi-squared test statistic and the p-value of the test. The null hypothesis is that the models are equally good, and the alternative hypothesis is that the more complex model is better.
+
+For example, suppose you have a logistic regression model with two predictors, `a` and `b`, and you want to test if `b` is significant after adjusting for `a`. You can fit the full model and the reduced model using the `glm()` function, and then use the `lrtest()` function to compare them:
+
+```r
+# Load the lmtest package
+library(lmtest)
+
+# Fit the full model
+model_full <- glm(x ~ a + b, data = z, family = binomial("logistic"))
+
+# Fit the reduced model
+model_reduced <- glm(x ~ a, data = z, family = binomial("logistic"))
+
+# Perform the likelihood ratio test
+lrtest(model_full, model_reduced)
+```
+
+The output will show the degrees of freedom, the test statistic, and the p-value of the test. If the p-value is below a certain significance level (e.g. 0.05), you can reject the null hypothesis and conclude that the full model is significantly better than the reduced model.
+
+You can find more information and examples about the likelihood ratio test in R from the following sources:
+
+- [How to Perform a Likelihood Ratio Test in R - Statology](^1^)
+- [Likelihood ratio test in R - Cross Validated](^2^)
+
+Source: Conversation with Bing, 11/19/2023
+(1) How to Perform a Likelihood Ratio Test in R - Statology. https://www.statology.org/likelihood-ratio-test-in-r/.
+(2) logistic - Likelihood ratio test in R - Cross Validated. https://stats.stackexchange.com/questions/6505/likelihood-ratio-test-in-r.
+(3) testing - Likelihood ratio test in R - Stack Overflow. https://stackoverflow.com/questions/51803027/likelihood-ratio-test-in-r.
