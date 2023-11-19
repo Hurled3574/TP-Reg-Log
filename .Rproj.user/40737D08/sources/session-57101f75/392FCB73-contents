@@ -6,8 +6,9 @@ library(lmtest)
 library(RcmdrMisc)
 library(car)
 library(FactoMineR)
+library(MASS)
 cmama <- read.csv ("data.csv")
-View (cmama)
+# View (cmama)
 
 ######################
 
@@ -73,11 +74,15 @@ PCA(cmama2[,-1])
 PCA(cmama2[,-1])$eig
 PCA(cmama2[,-1])$var
 
-tamaño <- 
+mvarcovcmama2 <- var(cmama2[,-1])
+
+eigen(mvarcovcmama2)
+
+comp1 <- eigen(mvarcovcmama2)$vectors[,1] %*% as.matrix(cmama2[,-1])
 
 ## Pruebas Ómnibus
 
-print(stepwise(modelo))
+stepwise(modelo)
 
 # ols_regress (diagnostico)
 # 
@@ -86,6 +91,20 @@ print(stepwise(modelo))
 ## Analisis de factores
 
 factanal(cmama2[,-1], 3)
+
+#Regresión Ridge
+
+# ridge1 <- lm.ridge(diagnostico ~ radio_medio + textura_media + perimetro_medio + area_media + uniformidad_media + compactabilidad_media + concavidad_media + puntos_concavos_medios + simetria_media + dimension_fractal_media, cmama2, lambda = 0)
+
+# vif(ridge1, type = "predictor")
+
+##Por criterio de Akkaikke nos quedamos con el siguiente modelo que explica el diagnostico
+
+modelo_aic <- glm(diagnostico ~ textura_media + area_media + puntos_concavos_medios, family = binomial(link = "logit"), cmama2)
+
+vif(modelo_aic)
+
+summary(modelo_aic)
 
 #########################
 #########################
