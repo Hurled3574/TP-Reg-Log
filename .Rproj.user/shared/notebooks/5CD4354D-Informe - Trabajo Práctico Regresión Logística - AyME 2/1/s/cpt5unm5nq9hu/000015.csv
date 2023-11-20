@@ -1,0 +1,4 @@
+"0","cmama2 %>%"
+"0","  select(-diagnostico) %>%"
+"0","  cor() %>%"
+"0","  corrplot(method = ""circle"", type = ""upper"", tl.col = ""black"", tl.srt = 45)"

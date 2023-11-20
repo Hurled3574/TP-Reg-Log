@@ -20,6 +20,7 @@ library(caret)
 library(pROC)
 library(ROCR)
 library(glmulti)
+library(DescTools)
 ```
 
 # Cáncer de mama
@@ -30,11 +31,13 @@ Se ha desarrollado un sistema de diagnóstico de tumores de mama mediante técni
 
 ## Introducción
 
-La siguiente base de datos contiene información sobre 569 tumores de mama, de los cuales 357 son benignos y 212 son malignos. Para cada uno de ellos se registraron 32 variables, de las cuales 30 son numéricas y 2 son categóricas. Las variables numéricas son medidas obtenidas a partir de imágenes digitalizadas de los tumores, mientras que las variables categóricas son el diagnóstico (benigno o maligno) y el identificador del paciente. De las 30 variables numéricas, 10 son medidas obtenidas a partir de la media de las imágenes, 10 son medidas obtenidas a partir del error estándar de las imágenes y 10 son medidas obtenidas a partir del peor valor de las imágenes. Para este trabajo se utilizarán las variables obtenidas a partir de la media de las imágenes para desarrollar un modelo de regresión logística que permita predecir la variable categórica diagnóstico.
+La siguiente base de datos contiene información sobre 569 tumores de mama, de los cuales 357 son benignos y 212 son malignos. Para cada uno de ellos se registraron 32 variables, de las cuales 30 son numéricas y 2 son categóricas. Las variables numéricas son medidas obtenidas a partir de imágenes digitalizadas de los tumores, mientras que las variables categóricas son el diagnóstico (benigno o maligno) y el identificador del paciente. De las 30 variables numéricas, 10 son medidas obtenidas a partir de la media de las imágenes, 10 son medidas obtenidas a partir del error estándar de las imágenes y 10 son medidas obtenidas a partir del peor valor de las imágenes. Para este trabajo se utilizan las variables obtenidas a partir de la media de las imágenes para desarrollar un modelo de regresión logística que permita explicar la variable categórica diagnóstico.
 
 ## Carga de datos
 
-Obtenemos la base de datos de la siguiente dirección: https://archive.ics.uci.edu/dataset/17/breast+cancer+wisconsin+diagnostic. La misma se encuentra comprimida y dentro en formato csv. La cargamos en R y la guardamos en un objeto manteniendo sólo las columnas que nos interesan con nombres más cortos y descriptivos en castellano.
+Obtenemos la base de datos de la siguiente dirección: https://archive.ics.uci.edu/dataset/17/breast+cancer+wisconsin+diagnostic. La misma se encuentra comprimida y dentro en formato csv. La cargamos en R y la guardamos en un objeto y mantenemos las variables que nos interesan con nombres más cortos y descriptivos en español.
+
+Aparte, analizamos las variables predictoras que contienen las medias porque resultan más sencillas para comunicar los resultados, y porque expresan con mayor claridad la situación de cada caso. En contraposición, las variables que expresan los errores estándar o los valores límite, resultan más complejas de comunicar o analizar.
 
 ```{r}
 
@@ -60,15 +63,16 @@ colnames (cmama2) <-
     "dimension_fractal_media")
 
 cmama2$diagnostico <- ifelse (cmama2$diagnostico == "B", 0, 1)
-
 glimpse(cmama2)
 ```
 
+Además, definimos la problemática: el criterio de diagnóstico ¿es explicada por las variables vinculadas al tamaño, la textura y la forma del tumor? ¿De que manera?
+
 ## Análisis exploratorio
 
-La variable dependiente es la variable categórica *diagnóstico*, que toma el valor 0 si el tumor es benigno y 1 si el tumor es maligno.
+La variable dependiente es la variable dicotómica *diagnóstico*, que toma el valor 0 si el tumor es benigno y 1 si el tumor es maligno.
 
-```{r}
+```{r warning=FALSE}
 cmama2 %>%
   ggplot(aes(x = factor(diagnostico), fill = factor(diagnostico))) +
   geom_bar() +
@@ -77,13 +81,13 @@ cmama2 %>%
   geom_text(stat = "count", aes(label = ..count..), vjust = 2)
 ```
 
-Las 10 variables numéricas continuas independientes refieren a:
+Las 10 variables cuantitativas continuas independientes refieren a medidas de los tumores:
 
 a)  radio (media de las distancias desde el centro hasta puntos en el perímetro)
 b)  textura (desviación estándar de los valores de escala de grises)
 c)  perímetro
 d)  área
-e)  suavidad (variación local en longitudes de radio)
+e)  suavidad o uniformidad (variación local en longitudes de radio)
 f)  compacidad (perímetro\^2 / área - 1.0)
 g)  concavidad (severidad de porciones cóncavas del contorno)
 h)  puntos cóncavos (número de porciones cóncavas del contorno)
@@ -98,6 +102,13 @@ cmama2 %>%
   facet_wrap(~variable, scales = "free") +
   theme_minimal() +
   theme(legend.position = "none")
+```
+
+También, descartamos la posibilidad de valores faltantes o duplicados
+
+```{r}
+anyNA (cmama2) #No hay valores faltantes
+anyDuplicated (cmama2) #No hay elementos duplicados
 ```
 
 ## Correlación entre variables
@@ -126,88 +137,47 @@ cmama2 %>%
   arrange(desc(correlacion))
 ```
 
-De estas variables fuertemente correlacionadas entre sí, decidimos quedarnos con una de ellas en base a su mayor correlacion con todas las demás.
+También, construimos un modelo preliminar y revisamos la variabilidad de los datos en aquellas variables que están muy correlacionadas
 
-```{r}
-cmama2 %>%
-  select(perimetro_medio, radio_medio, area_media, puntos_concavos_medios, compactabilidad_media, concavidad_media) %>%
-  cor() %>%
-  as.data.frame() %>%
-  rownames_to_column(var = "variable") %>%
-  gather(key = "variable2", value = "correlacion", -variable) %>%
-  filter(correlacion < 1) %>%
-  group_by(variable) %>% summarise(correlacion_media = mean(correlacion)) %>% 
-  arrange(desc(correlacion_media))
+```{r warning=FALSE}
+#Diagnóstico de los datos
+
+modelo <-
+  glm (
+    diagnostico ~ radio_medio + textura_media + perimetro_medio + area_media + uniformidad_media + compactabilidad_media + concavidad_media + puntos_concavos_medios + simetria_media + dimension_fractal_media,
+    family = binomial(link = "logit"),
+    data = cmama2
+  )
+
+#Diagnostico: colinealidad
+vif (modelo)
 ```
 
-Decidimos mantener puntos_concavos_medios y eliminar las demás variables altamente correlacionadas con ella.
+Debido a que el modelo inicial presenta variables explicativas altamente correlacionadas, buscamos un modelo que pueda explicar de manera precisa el diagnóstico en base a las medidas de tamaño, textura y forma del tumor, pero con la eliminación de aquellas variables predictoras están altamente correlacionadas y que complican la precisión y explicación del modelo.
 
-```{r}
-cmama3 <- cmama2 %>%
-  select(-perimetro_medio, -radio_medio, -area_media, -concavidad_media, -compactabilidad_media)
-
-cmama3 %>%
-  select(-diagnostico) %>%
-  cor() %>%
-  corrplot(method = "circle", type = "upper", tl.col = "black", tl.srt = 45)
-
-cmama3 %>%
-  select(-diagnostico) %>%
-  cor()
+```{r warning=FALSE}
+stepwise(modelo)
 ```
 
 ## Postulación del modelo
 
-```{r}
-modelo1 <-
-  glm (
-    diagnostico ~ .,
-    family = binomial(link = "logit"),
-    data = cmama3
-  )
-
-summary (modelo1)
-```
-
-Realizamos una eliminación paso a paso de las variables no significativas.
+Así, se arriba a un modelo más sencillo, más preciso y que explica mejor el criterio de diagnóstico en base a las medidas del tamaño, la textura y la forma del tumor, mediante el criterio de información de Akkaike
 
 ```{r}
-stepwise(modelo1, direction='forward', criterion='AIC')
+cmama3 <- cmama2[, c(1, 3, 5, 9)]
+
+modelo_aic <- glm(diagnostico ~ ., family = binomial(link = "logit"), cmama3)
+
+summary(modelo_aic)
 ```
 
-Realizamos un análisis exhaustivo de los modelos posibles, con el criterio de información de Akaike (AIC) como criterio de selección.
-
-```{r}
-modelos <-
-  glmulti::glmulti(diagnostico ~ ., data = cmama3,
-          level = 1,               # No hay interacciones
-          method = "h",            # Analisis exhaustivo
-          crit = "aic",            # AIC como criterio
-          confsetsize = 5,         # Se queda con los mejores 5 modelos
-          plotty = T, report = T,  # Sin dibujo ni reporte
-          fitfunction = "glm",     # glm function
-          family = binomial(link = "logit"))  # Familia de la binomial
-```
-
-Con ambas técnicas, se obtiene el mismo modelo. Nos quedamos con el modelo final simplificado, eliminando la variables no significativas simetria_media y uniformidad_media.
-
-```{r}
-modelo2 <-
-  glm (
-    diagnostico ~ textura_media + puntos_concavos_medios + dimension_fractal_media,
-    family = binomial(link = "logit"),
-    data = cmama3
-  )
-
-summary (modelo2)
-```
 
 ## Verificación del modelo
 
 Verificamos que el factor de inflación de la varianza (VIF) de cada variable sea menor a 5.
 
 ```{r}
-vif(modelo2)
+vif(modelo_aic)
 ```
 
 ## Interpretación del modelo
@@ -215,8 +185,23 @@ vif(modelo2)
 Coeficientes e intervalos de confianza para cada variable predictora.
 
 ```{r}
-exp(cbind(coef(modelo2),confint.default(modelo2)))
+exp(cbind(coef(modelo_aic),confint.default(modelo_aic)))
 ```
+
+## Pseudo $R^2$
+
+```{r}
+PseudoR2( modelo_aic, which = c("Nagelkerke", "AIC") )
+```
+
+## Prueba de Bondad de Ajuste Hosmer-Lemeshow
+
+Se realiza una prueba de 
+
+```{r}
+HosmerLemeshowTest(fit = fitted(modelo_aic), obs = cmama3$diagnostico)
+```
+Por lo tanto, el modelo de regresión logística está bien ajustado.
 
 ## Predicción del modelo
 
@@ -224,7 +209,7 @@ Predicción de la probabilidad de que el tumor sea maligno.
 
 ```{r}
 referencia <- cmama3$diagnostico
-prediccion <- predict(modelo2, type="response")
+prediccion <- predict(modelo_aic, type="response")
 ```
 
 Curva ROC y área bajo la curva ROC.

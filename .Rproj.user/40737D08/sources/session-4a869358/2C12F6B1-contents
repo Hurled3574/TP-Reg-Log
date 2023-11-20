@@ -1,0 +1,312 @@
+####    Regresion Multiple    ####
+####  Variables Cualitativas  ####
+##################################
+
+#########################
+#### Seteo y cargas  ####
+#########################
+
+#Seteamos la ruta
+{setwd("C:\\Users\\carlo\\Dropbox\\Archivos de Apuntes\\Regresion Lineal\\Variables Ficticias")
+
+#Guardamos los parametros graficos basicos
+rm(list=ls())
+oldpar<-par(no.readonly = TRUE)
+options("scipen"=999, "digits"=4)
+
+###################################
+####  Instalación y carga de   ####
+####  la librerías necesarias  ####
+###################################
+
+#Cargamos las librerías y borramos todo
+library("Hmisc")     #Para archivo SPSS
+library("psych")     #Para graficos
+library("olsrr")     #Para salidas de regresión
+library("stargazer") #Para tablas
+}
+
+##############################
+#### Levantamos la base   ####
+#### y armamos los datos  ####
+##############################
+
+#####Abrimos el archivo de SPSS####
+#Como podran ver, la base contiene varias variables de diversos ejercicios y, por ende, de diversas longitudes
+{cuali<-spss.get("Regresion Multiple Variables Ficticias.sav")
+
+######################################
+#### Transformación de los datos  ####
+######################################
+
+#Por lo tanto lo que debemos hacer armar los subset con las variables de cada ejercicio.
+#Ejercicio 1
+produccion<-data.frame(cuali$Preciotrigo,cuali$BsCapital,cuali$Atipico,cuali$RPampeana)
+colnames(produccion)<-c("Precio","BsCapital","Atipico","Region Pampeana")
+produccion<-produccion[-31,]
+
+#Ejercicio 2 En la variable Sexo, el 1 representa al hombre
+personas<-data.frame(cuali$Basico,cuali$Experiencia,cuali$Sexo)
+colnames(personas)<-c("Basico","Experiencia","Sexo")
+personas<-personas[-(18:31),]
+
+#Ejercicio 3
+gasto<-data.frame(cuali$Consumo,cuali$Renta,cuali$Zona)
+colnames(gasto)<-c("Consumo","Renta","Zona")
+gasto<-gasto[-(21:31),]
+
+#Ejercicio 5
+empresa<-data.frame(cuali$Ganancias,cuali$Ventas,cuali$T1, cuali$T2,cuali$T3,cuali$T4)
+colnames(empresa)<-c("Ganancias","Ventas","T1","T2","T3","T4")
+empresa<-empresa[-(25:31),]
+
+#Ejercicio 6
+ahorro<-data.frame(cuali$Año,cuali$Ahorro,cuali$Ingreso,cuali$D)
+colnames(ahorro)<-c("Año","Ahorro","Ingreso","D")
+ahorro<-ahorro[-(27:31),]
+}
+
+#####################################
+#### Detección de valor atípico  ####
+#####################################
+
+####Ejercicio 1####
+attach(produccion)
+
+#Hacemos otro dibujo donde seleccionamos de la base produccion que tengan "Atipico"=0, ambas variables
+{plot(produccion[Atipico==0,"Precio"],produccion[Atipico==0,"BsCapital"],pch=19,col="red",xlab="Precio",ylab="Bs Capital",
+     ylim = c(0,35),main="Grafico de Dispersion")
+points(produccion[Atipico==1,"Precio"],produccion[Atipico==1,"BsCapital"],pch=19,col="blue")
+}
+
+#Realizamos la regresión sin el valor atípico para ver que la recta sigue un sendero ideal
+reg1<-lm(BsCapital~Precio,subset = (Atipico==0))
+
+#Dibujamos la recta de regresion
+abline(coef = coef(reg1),col="red",lwd=2)
+
+#Analizamos los resultados
+ols_regress(reg1)
+
+#Realizamos la regresión con las dos variables originales con todos los datos
+reg2<-lm(BsCapital~Precio);summary(reg2)
+
+#Dibujamos la recta de regresión de todos los datos
+abline(coef = coef(reg2),col="blue",lwd=2)
+
+#Realizamos la regresión con las dos variables y le agregamos la variable dicotomica
+reg3<-lm(BsCapital~Precio+Atipico);summary(reg3)
+ols_regress(BsCapital~Precio+Atipico,data = produccion )
+
+#Dibujamos la recta de regresion
+abline(coef = coef(reg3),col="green",lty=2)
+
+#Comparativo de las tres regresiones
+stargazer(reg1 , reg2 , reg3 , type="text" , column.labels = c("Sin punto","Con punto","Con atipico"))
+
+#Cerramos el uso de la base y usamos la siguiente
+detach(produccion)
+
+######################################
+#### Análisis de variables cuali  ####
+######################################
+
+####Ejercicio 2####
+attach(personas)
+
+#Hacemos el dibujo distinguiendo si el punto corresponde a una Mujer o un Hombre
+{plot(Experiencia,Basico)
+points(personas[Sexo==1,"Experiencia"],personas[Sexo==1,"Basico"],pch=19,col="blue")
+points(personas[Sexo==0,"Experiencia"],personas[Sexo==0,"Basico"],pch=19,col="red")
+legend("topleft",legend = c("Hombre","Mujer"),bty="n",fill=c("blue","red"))
+}
+
+#Hacemos la regresión
+reg4<-lm(Basico~Experiencia+Sexo);summary(reg4)
+ols_regress(reg4)
+
+#Cerramos la base y pasamos al siguiente
+detach(personas)
+
+####Ejercicio 3####
+#No esta en el HTML
+attach(gasto)
+
+#Hacemos el dibujo distinguiendo si el punto corresponde a zona Urbana o Rural
+{plot(Renta,Consumo)
+points(gasto[Zona==1,"Renta"],gasto[Zona==1,"Consumo"],pch=19,col="blue")
+points(gasto[Zona==0,"Renta"],gasto[Zona==0,"Consumo"],pch=19,col="red")
+}
+
+#Hacemos dos regresiones, una para cada tipo de zona buscando que haya una diferencia entre ambas
+{reg5<-lm(Consumo~Renta,subset = (Zona==0))
+#Dibujamos la recta de regresion
+abline(coef = coef(reg5),col="red",lwd=2)
+}
+
+#Hacemos la regresión para zona 1
+{reg6<-lm(Consumo~Renta,subset = (Zona==1))
+
+#Dibujamos la recta de regresión
+abline(coef = coef(reg6),col="blue",lwd=2)
+}
+
+#Hacemos la regresión con ambas variables
+{reg7<-lm(Consumo~Renta+Zona);summary(reg7)
+abline(coef = coef(reg7),col="green4",lwd=2)
+}
+
+#Salida de regresión solo con la categórica
+ols_regress(reg7)
+
+#Cerramos la base y pasamos al siguiente
+detach(gasto)
+
+######################
+#### Interacción  ####
+######################
+
+####Ejercicio 5####
+{attach(produccion)
+
+#Hacemos la grafica pero esta distinguiendo los puntos de la Region Pampeana
+plot(Precio,BsCapital)
+points(produccion[`Region Pampeana`==1,"Precio"],produccion[`Region Pampeana`==1,"BsCapital"],pch=19,col="blue")
+points(produccion[`Region Pampeana`==0,"Precio"],produccion[`Region Pampeana`==0,"BsCapital"],pch=19,col="red")
+
+
+#Creamos la variable de interacción
+intera<-Precio*`Region Pampeana`
+
+#Hacemos la regresión para probar si existe interacción
+reg8<-lm(BsCapital~Precio+intera)
+}
+ols_regress(reg8)
+
+#Regresión con la cuali y la interacción
+rega<-lm(BsCapital~Precio+produccion$`Region Pampeana`+ intera)
+ols_regress(rega)
+
+
+#Cerramos la base y pasamos al siguiente
+detach(produccion)
+
+##########################################
+####  Análisis de la estacionalidad   ####
+##########################################
+
+attach(empresa)
+#Hacemos la regresión sin las variables tiempo para donde por donde pasa
+reg9<-lm(Ganancias~Ventas)
+
+#Realizamos la grafica distinguiendo cada trimestre
+{plot(Ventas,Ganancias,col="orange",pch=19)
+points(empresa[T2==1,"Ventas"],empresa[T2==1,"Ganancias"],pch=19,col="blue")
+points(empresa[T3==1,"Ventas"],empresa[T3==1,"Ganancias"],pch=19,col="red")
+points(empresa[T4==1,"Ventas"],empresa[T4==1,"Ganancias"],pch=19,col="green4")
+abline(coef=coef(reg9))
+legend("topleft",legend=c("T1","T2","T3","T4"),
+       col = c("orange","blue","red","green4"),bty="n",pch=19)
+}
+
+#Analizamos los coeficientes de la regresión para determinar las estacionalidades
+reg10<-lm(Ganancias~Ventas+T2+T3+T4)
+ols_regress(reg10)
+
+#Si tomamos otro trimestre como base, simplemente los coeficientes reflejan los diferenciales 
+#respecto del periodo base, si el diferencial es significativo, existe estacionalidad sin 
+#considerar el trimestre base
+reg11<-lm(Ganancias~Ventas+T1+T2+T4,data = empresa)
+ols_regress(reg11)
+#Los coeficientes representan los mismos valores solo que cambian de valor en funcion a
+#que periodo de tome de base
+
+#Podemos hacer la regresión con los 4 trimestres pero debemos sacar la ordenada al origen
+reg12<-lm(Ganancias~Ventas+T1+T2++T3+T4-1,data = empresa)
+ols_regress(reg12)
+
+
+detach(empresa)
+
+########################################
+####  Prueba de Cambio Estructural  ####
+########################################
+
+#Tabla 8.9 Gujarati 5? Edicion pag 255
+attach(ahorro)
+
+#Veamos un analisis descriptivo para ver si los cambios son perceptibles, analizamos cada variable por separado.
+x<-ahorro[,2:4]
+
+#Analizamos "Ahorro" segun los niveles de D
+a<-round(rbind(Maximo=tapply(Ahorro,D,max),
+               Minimo=tapply(Ahorro,D,min),
+               Media=tapply(Ahorro,D,mean),
+               Mediana=tapply(Ahorro,D,median),
+               Modo=tapply(Ahorro,D,function(x) as.numeric(names(table(x)[which.max(table(x))]))),
+               Rango=tapply(Ahorro,D,function(x) max(x)-min(x)),
+               Desvio=tapply(Ahorro,D,sd),
+               Varianza=tapply(Ahorro,D,sd)^2,
+               "Cuartil 1"=tapply(Ahorro,D,function(x)quantile(x,probs=0.25)),
+               "Cuartil 3"=tapply(Ahorro,D,function(x)quantile(x,probs = 0.75)),
+               "CV%"=tapply(Ahorro,D,function(x) sd(x)/mean(x)*100),
+               Datos=tapply(Ahorro,D,function(x){sum(!is.na(x))})),3);a
+
+#Analizamos "Ingreso" según los niveles de D
+a<-round(rbind(Maximo=tapply(Ingreso,D,max),
+               Minimo=tapply(Ingreso,D,min),
+               Media=tapply(Ingreso,D,mean),
+               Mediana=tapply(Ingreso,D,median),
+               Modo=tapply(Ingreso,D,function(x) as.numeric(names(table(x)[which.max(table(x))]))),
+               Rango=tapply(Ingreso,D,function(x) max(x)-min(x)),
+               Desvio=tapply(Ingreso,D,sd),
+               Varianza=tapply(Ingreso,D,sd)^2,
+               "Cuartil 1"=tapply(Ingreso,D,function(x)quantile(x,probs=0.25)),
+               "Cuartil 3"=tapply(Ingreso,D,function(x)quantile(x,probs = 0.75)),
+               "CV%"=tapply(Ingreso,D,function(x) sd(x)/mean(x)*100),
+               Datos=tapply(Ingreso,D,function(x){sum(!is.na(x))})),3);a
+
+#Hacemos los box-plot para cada variable cortada.
+{boxplot(Ahorro~D,horizontal=T,col=c("red","magenta"),names=c("Antes","Despues"),pch=19,main="Ahorro para las dos etapas")
+boxplot(Ingreso~D,horizontal=T,col=c("red","magenta"),names=c("Antes","Despues"),pch=19,main="Ingreso para las dos etapas")
+}
+
+#Hacemos el grafico de cada una de las variables
+{plot(Año,Ahorro,main="Ahorro entre 1970 y 1995")
+points(Año[D==0],Ahorro[D==0],col="blue",pch=19)
+points(Año[D==1],Ahorro[D==1],col="red",pch=19)
+legend("topleft",legend=c("Antes","Despues"),col = c("blue","red"),bty="n",pch=19)
+}
+
+plot(Año,Ingreso,main="Ingreso entre 1970 y 1995")
+points(Año[D==0],Ingreso[D==0],col="blue",pch=19)
+points(Año[D==1],Ingreso[D==1],col="red",pch=19)
+legend("topleft",legend=c("Antes","Despues"),col = c("blue","red"),bty="n",pch=19)
+
+#Hacemos la regresión usando "D" para ver el cambio de ordenada 
+# y la misma variable interando con "Ingreso" para ver el cambio de pendiente.
+reg11<-lm(Ahorro ~ Ingreso + D + Ingreso:D)
+
+ols_regress(reg11)
+#Vemos que los coeficientes de "D" y la interaccion "Ingreso*D" son significativos por lo que hubo un cambio estructural en el punto dado.
+
+
+####Ejercicio del Manual de ICAO
+#https://www.icao.int/MID/Documents/2014/Aviation%20Data%20Analyses%20Seminar/8991_Forecasting_en.pdf
+#El PBI esta a valores constantes de 1990
+
+#Limpiamos todo lo anterior
+rm(list=ls())
+
+#Crisis es una baja en la cantidad de pasajeros en 1998
+#Gemelas es el atentado a las torres gemelas de 2001
+#Cargamos los datos de la Tabla 1-2 pagina I-36
+datos<-data.frame(Año=seq(1980,2001,1),
+                  Trafico=c(6845,6845,7036,7058,8296,8889,10044,11517,13363,14729,16033,16363,18121,18967,20266,22567,24816,26779,25184,26681,28846,25945),
+                  PBI=c(7688,7907,7908,8217,8704,9057,9363,9750,10269,10642,10937,11109,11494,11727,12185,12732,13241,13739,13941,14482,15184,15380),
+                  Yield=c(139.48,145.67,134.53,132.10,127.37,119.26,126.11,115.58,108.42,103.16,100,100.77,93.63,93.96,93.68,87.96,83.88,80.43,80.43,78.82,78.43,76.07),
+                  Crisis=rep(c(0,1,0),c(18,1,3)),Gemelas=rep(c(0,1),c(21,1)));datos
+
+#El Modelo utilizado es un log-log para todas las independientes
+reg1<-lm(log(Trafico)~ log(PBI) + log(Yield) + Crisis + Gemelas,data = datos)
+ols_regress(reg1)

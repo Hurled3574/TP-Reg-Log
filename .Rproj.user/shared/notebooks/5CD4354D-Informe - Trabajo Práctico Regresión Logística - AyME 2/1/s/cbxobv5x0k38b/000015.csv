@@ -1,0 +1,6 @@
+"0","cmama2 %>%"
+"0","  ggplot(aes(x = factor(diagnostico), fill = factor(diagnostico))) +"
+"0","  geom_bar() +"
+"0","  theme_minimal() +"
+"0","  theme(legend.position = ""none"") +"
+"0","  geom_text(stat = ""count"", aes(label = ..count..), vjust = 2)"

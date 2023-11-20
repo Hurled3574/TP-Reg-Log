@@ -1,0 +1,7 @@
+"0","cmama2 %>%"
+"0","  gather(key = ""variable"", value = ""value"", -diagnostico) %>%"
+"0","  ggplot(aes(x = value, fill = factor(diagnostico))) +"
+"0","  geom_density(alpha = 0.5) +"
+"0","  facet_wrap(~variable, scales = ""free"") +"
+"0","  theme_minimal() +"
+"0","  theme(legend.position = ""none"")"

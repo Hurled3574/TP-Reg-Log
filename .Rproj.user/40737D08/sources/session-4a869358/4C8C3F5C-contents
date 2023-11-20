@@ -1,0 +1,570 @@
+#########################################
+#### Análisis de Regresión Múltiple  ####
+#########################################
+
+###############
+#### Seteo ####
+###############
+
+#Fijo la ruta de los archivos, cada uno debe fijar su ruta y pongale a la que esta que es la mia un # delante de todo.
+#El "#" define que el renglón es un comentario nada mas y no algo que procesar
+{#setwd("C:/Users/carlo/Dropbox/Archivos de Apuntes/Regresion Lineal/Regresion/Bases y Sintaxis")
+
+#Borramos las cosas anteriores, guardamos los parámetros gráficos básicos, sacamos la notación científica
+rm(list=ls())
+  oldpar<-par(no.readonly = TRUE)
+  options("scipen"=999, "digits"=6)
+
+
+#####################################
+#### Instalación y carga         ####
+####  de la librerías necesarias ####
+#####################################
+
+#Cargo las librerías necesarias
+  library("foreign")    #Para abrir archivos SPSS
+  library("car")        #Para hipótesis lineales
+  library ("rgl")       #Para gráficos 3D
+  library("corrplot")   #Para gráfico de correlaciones
+  library("olsrr")      #Para cuadros mas completos de regresión
+  library("estgeneral") #Para la parte de descriptivos
+  library("regresion")  #Para los gráficos de las pruebas
+  library("wooldridge") #Para los datos de la regresión
+}
+
+###########################
+#### Funciones a usar  ####
+###########################
+
+#Esta funcion rearma la tabla ANOVA
+anva<-function(x){
+  x<-anova(x)
+  a<-sum(x[1:(nrow(x)-1),1]);a
+  b<-x[nrow(x),1];b
+  c<-sum(x[,1]);c
+  d<-sum(x[1:(nrow(x)-1),2]);d
+  e<-x[nrow(x),2];e
+  f<-sum(x[,2]);f
+  g<-d/a;g
+  h<-e/b;h
+  i<-g/h;i
+  j<-pf(i,a,b,lower.tail = FALSE);j
+  
+  k<-data.frame(Fuente=c("Regresion","Residuos","Total"),Gl=c(a,b,c),"Suma Cuadrados"=c(d,e,f),`Cuadrados Medios`=c(round(g,4),round(h,4),NA),
+                `Prueba F`=c(round(i,4),NA,NA),`P Value`=c(round(j,6),NA,NA),check.names = F)
+  k[is.na(k)] <- ""
+  return(k)}
+
+#############################
+####  Preguntas basadas  ####
+#### en la presentacion  ####
+#############################
+
+# 1 - ¿Que estima el modelo de regresion lineal?
+# explica una variable en base a otra
+# 2 - ¿Que es ceteris paribus?
+# El resto de variables igual, se fijan variables/parámetros, mantener resto de variables constantes.
+# 3 - ¿Que implica en términos de la interpretación de los coeficientes que E(e/x)=0? ¿Cambia e al cambiar x?
+#Indepcia. Si son indeptes, entonces no cambia e al cambiar x
+# 4 - Si X se considera aleatoria ¿Que hace sobre X la E(e/x)? ¿Ayuda a la independencia de e de x?
+#Si X es prefijada, entonces indepcia es mas facil de probar. Pero si X es aleatoria, hay que ver como influyen las X en la distribucion, hay que probar que distribucion usan.
+# 5 - ¿Cual es la diferencia entre E(e)=0 y E(e/x)=0 ? ordenada y media independiente
+#1a es un supuesto para el calculo de la ordenada, 2a verifica indepcia para interpretar mejor los coeficientes
+# 6 - ¿Cuales son los cuatro primeros supuestos?
+#Linealidad (no es una recta necesariamente) de los beta, de los parametros, parametros con exponente = 1
+# X sale de una muestra aleatoria
+# cov(xi,xj)= 0 no hay colinealidad perfecta. Permite calcular beta.
+# E(epsilon/x)=0, nos asegura indepcia. e interpretacion. Modelo correctamente especificado. Si E(epsilon/x) != 0, entonces no esta correctamente especificado
+#Entonces, confirmamos que los estimadores minimocuadraticos son insesgados
+# 7 - Bajo estos supuestos ¿Que condición deseable se cumple?
+#Var(epsilon/x)=Var(epsilon)= Sigma^2 (Homoscedasticidad) LA varianza condicional es constante.
+#Por lo tanto, teorema de Gauss-Markov: los estimadores minimo cuadraticos son eficientes
+# sexto supuesto: Errores normales (lo flexibilizamos)
+# 8 - ¿Cual es la diferencia entre error y residuo?
+#error, parametro poblacional, del modelo, no observable
+#residuo, en la muestra, observables, surgen de los datos
+# 9 - ¿Cual es el supuesto 5?
+#Homoscedasticidad que asegura eficiencia
+# 10 - ¿Porque para obtener sigma2 estimado se divide por n-p y no n-1 o n-2?
+#p = k+1, por el tema de las restricciones y de variables
+# 11 - Bajo los 5 supuestos ¿Que condición cumplen los estimadores?
+#Insesgadez y eficiencia
+# 12 - ¿Cual es la forma matricial de estimar los coeficientes? ¿Existe alguna condición para estimar?
+#ver apuntes
+# 13 - ¿Cual es el supuesto 6?
+#errores normales
+# 14 - ¿Cual es su implicancia sobre las estimaciones? #b = beta + sum(w*e) con beta y w no aleatorios
+# 15 - ¿Cual es la diferencia conceptual entre "intervalo de la media y de la predicción?
+# 16 - ¿Cual es la diferencia matematica entre "intervalo de la media y de la predicción?
+
+
+##############################
+#### Levantamos la base   ####
+#### y armamos los datos  ####
+##############################
+
+#Vemos los datasets del paquete del libro de Wooldridge
+data(package="wooldridge")
+
+#Definimos los datos a utilizar
+data('wage1')
+
+#La base se refiere al salario promedio por hora de trabajadores en base 24 variables.
+help("wage1")
+
+#Variables en la regresion
+#Y  = log(wage) = Logaritmo del salario promedio por hora
+#X1 = educ      = Años de educacion
+#X2 = exper     = Años de experiencia en el mercado laboral
+#X3 = tenure    = Años de antiguedad en el puesto
+
+#Construimos una base con las variables de interes para la regresion
+datos<-wage1[,c("lwage","educ","exper","tenure")]
+
+#Fijamos la base
+attach(datos)
+
+#################################
+####  Análisis Exploratorio  ####
+####    de la variables      ####
+#################################
+
+#Vemos descriptivos
+descr_m(datos) #no corre
+
+#Grafico de Dispersión Matricial
+pairs(datos,pch=19,col="red")
+
+#Gráfico de la matriz de correlaciones
+{col<-colorRampPalette(c("red","yellow","green4"))
+  corrplot(cor(datos),type="upper",tl.pos = "d",main = "Matriz de Correlaciones",mar=c(3,3,3,3),col=col(200))
+  corrplot(cor(datos),method = "number",type="lower",add=T,diag = F,tl.pos = "n",cl.pos = "n",number.digits = 4,col=col(200))
+}
+
+#Matriz de correlaciones
+cor(datos)
+
+#Hacemos los boxplots separados por las diferentes escalas de las variables
+par(mfrow=c(2,2),mar=c(2,2,2,2))
+boxplot(lwage,horizontal = T,col="red",main="Log del Salario",pch=19)
+boxplot(exper,horizontal = T,col="green4",main="Años de Experiencia",pch=19)
+boxplot(educ,horizontal = T,col="deepskyblue",main="Años de Educacion",pch=19)
+boxplot(tenure,horizontal = T,col="orange",main="Años de antiguedad",pch=19)
+par(oldpar)
+
+#################################
+####  Análisis de Regresión  ####
+####     Múltiple            ####
+#################################
+
+#Generamos la regresion para luego generar otros analisis
+reg<-lm(lwage ~ educ + exper + tenure)
+
+#Otra forma util puede hacerse definiendo la dependiente nada mas
+reg<-lm( lwage ~ . , data = datos)
+
+ols_regress(reg)
+# Analisis de varianza (anova) se lee primero
+
+
+##################################
+####  Análisis de Resultados  ####
+####    de la Regresión       ####
+##################################
+
+#http://erre-que-erre-paco.blogspot.com/2016/12/diferentes-sumas-de-cuadrados-en-anova.html
+
+#Primer Analisis : Tabla Anova Tipo I
+#es la diferencia de la suma de cuadrados del error cuando la variable se añade al modelo de regresión
+#en forma secuencial
+anova(reg)
+
+#Veamos como se calcula, "deviance" busca la SCRes del modelo
+deviance(lm(lwage ~ 1)) - deviance(lm(lwage ~ educ))
+deviance(lm(lwage ~ educ)) - deviance(lm(lwage ~ educ + exper))
+deviance(lm(lwage ~ educ + exper)) - deviance(lm(lwage ~ educ + exper + tenure))
+
+#Tabla Anova Tipo II
+Anova(reg,type = 2)
+
+#Representa el cambio en la SCRes sacando cada variable en particular
+anova(lm(lwage ~ exper + tenure))[3,2] - anova(lm(lwage ~ educ + exper + tenure))[4,2]
+anova(lm(lwage ~ exper + educ))[3,2] - anova(lm(lwage ~ educ + exper + tenure))[4,2]
+anova(lm(lwage ~ tenure + educ))[3,2] - anova(lm(lwage ~ educ + exper + tenure))[4,2]
+
+#Es similar al Tipo II por la falta de interacciones
+Anova(reg,type = 3)
+
+#Veamos una funcion que lo presenta como Excel, con solo dos componentes
+anva(reg)
+
+#Hacemos la prueba F
+F.test(reg)
+
+#Vemos la tabla de los coeficientes
+summary(reg)
+
+#Hacemos las pruebas t
+beta.test(reg,2)
+
+#Construimos los intervalos de confianza
+ic95<-round(data.frame(Coeficientes=summary(reg)$coefficient[,1],
+                     "Inferior 95%"=confint(reg)[,1],"Superior 95%"=confint(reg)[,2],check.names = F ),5)
+
+ic95
+
+#Lo mismo con otra confianza
+ic99<-round(data.frame(Coeficientes=summary(reg)$coefficient[,1],
+                     "Inferior 99%"=confint(reg,level=0.99)[,1],"Superior 99%"=confint(reg,level=0.99)[,2],check.names = F ),5)
+
+ic99
+
+#Vemos las predicciones, solo las primeras 20
+predict(reg)[1:20]
+
+#Vemos que hace la funcion para calcularlos
+b0<-reg$coefficients[1]
+b1<-reg$coefficients[2]
+b2<-reg$coefficients[3]
+b3<-reg$coefficients[4]
+
+yest<-b0+b1*datos[,2]+b2*datos[,3]+b3*datos[,4]
+
+#Comparamos y vemos la coincidencia perfecta
+cbind(predict(reg)[1:20],yest[1:20])
+
+#Hacemos gráficos de los residuos 
+plot(residuals(reg),pch=19,col="red")
+#Y los residuos estandart
+plot(rstandard(reg),pch=19,col="red",ylim=c(-4,4))
+
+###########################################
+####  Regresión Múltiple por matrices  ####
+###########################################
+
+#Cantidad de datos
+n<-nrow(datos)
+#Cantidad de variables
+k<-3
+
+#Generamos un vector de unos
+uno<-matrix(rep(1 , nrow(datos)))
+
+#Juntamos las x y el uno en una matriz
+x<-as.matrix(cbind( uno , datos[,2:4]))
+
+#Generamos la Y
+y<-as.matrix(datos[,1])
+
+#Inversa de (x´X),es importante que esta matriz tenga inversa ya que es necesaria para calcular los betas
+#La funcion "solve" calcula la inversa, la "t" representa la transpuesta
+(inversa.xx<-solve(t(x)%*%x))
+
+#Coeficientes beta por matrices y ponemos los nombres para que quede bonito
+{(beta<-round(inversa.xx%*%t(x)%*%y,6))
+  
+  colnames(beta)<-c("Coeficientes")
+  row.names(beta)<-c("b0","b1","b2","b3");beta
+}
+
+
+#Estimaciones de Y por matrices
+{Yest<-x%*%beta
+  colnames(Yest)<-c("Estimaciones");Yest
+}
+
+##############################
+####  Armado tabla ANOVA  ####
+####   por matrices       ####
+##############################
+
+#Suma de residuos cuadrado por los residuos
+#Lo calculamos por matrices como diferencia entre observación y estimación.
+#"as.numeric" transforma el resultado en un numero, esto lo necesitamos para poder multiplicarlo por una matriz luego.
+(scr1<-as.numeric(t(y-Yest)%*%(y-Yest)))
+
+#Suma cuadrada explicada o Suma cuadrados de la regresion
+#Lo calculamos por matrices como diferencia entre estimacion de Y y promedio de Y
+(sce1<-as.numeric(t(Yest-mean(y))%*%(Yest-mean(y))))
+
+#Suma cuadrada total
+(sct1<-as.numeric(t(y-mean(y))%*%(y-mean(y))))
+
+#Calculamos el promedio cuadrado regresion (PCR)
+(PCR<-sce1/k)
+
+#Con esto calculamos la varianza de la regresion que es el Promedio Residuos Cuadrados (PRC) o Cuadrado Medio del Error (CME)
+cme<-scr1/(n-k-1);cme
+
+#Matriz de varianzas-covarianzas de los betas
+(varcov.beta<-scr1*inversa.xx*(1/(n-k-1)))
+
+#Matriz de correlaciones de los betas
+#primero cada elemento de la diagonal
+{(diago.beta<-diag(varcov.beta))
+  
+  #lo metemos dentro de una matriz
+  (diagonal.beta<-diag(sqrt(diago.beta),4,4))
+  
+  #calculamos la matriz de correlaciones
+  (correlaciones.beta<-solve(diagonal.beta)%*%varcov.beta%*%solve(diagonal.beta))
+}
+
+#Coeficiente de Determinacion
+(R2<-sce1/sct1)
+(r2<-summary(reg)$r.squared)
+
+#Coeficiente de Determinacion ajustado calculado de dos formas
+#Tomando datos de la regresion guardada
+(R2aj<-summary(reg)$adj.r.squared)
+
+#Calculado por nosotros
+(r2aj.b <- 1-(1-R2)*(n-1)/(n-k-1))
+
+#Estadistico F Calculo manual
+(f <- PCR / cme)
+
+
+#################################
+#### Estimaciones puntuales  ####
+####  para la variable Y     ####
+#################################
+
+#Los valores estimados estan guardados en el objeto "reg"
+reg$fitted.values
+
+#Los podemos pedir por funcion
+predict(reg)
+
+#Vemos que es lo mismo
+cbind(reg$fitted.values[1:10],predict(reg)[1:10])
+
+#Hacemos la estimacion para un valor puntual en la muestra, en este caso tomamos la primera fila
+(est_p<-predict(reg,data.frame(educ=11,exper=2,tenure=0),  #Armamos como data.frame los valores de las independientes
+                     interval = c("confidence"),  #Puede ser "confidence" o "prediction" para valor afuera de la recta
+                     se.fit = T)         )        #Solo muestra la varianza
+
+#Hacemos la estimación por matrices
+#Generamos los valores de las X, ponemos en 1 para la constante
+valores<-matrix(c(1,11,2,0),nrow=1,byrow = T);valores
+
+#Hacemos el producto de las matrices
+est_p2<-valores%*%beta;est_p2
+
+#Calculamos la varianza y su desvio
+var_est_p <- cme%*%valores%*%inversa.xx%*%t(valores)
+(desvio_est_p <- sqrt(var_est_p))
+
+cbind(est_p2 , est_p2 - qt(0.975,522) * desvio_est_p, est_p2 + qt(0.975,522) * desvio_est_p)
+
+#¿Como se arma el IC de la estimación?
+
+#Hacemos la estimación para el mismo valor pero considerando que no esta en la muestra.
+(pred_p<-predict(reg,data.frame(educ=11,exper=2,tenure=0),
+                      interval = "prediction",
+                      se.fit=T))
+
+#Vemos que la estimación es el mismo valor pero no asi los LI y LS
+
+#Hacemos la estimación por matrices usando el pronostico anterior pero cambia los LI y LS al tener mayor varianza por ser un valor nuevo
+#Calculamos la varianza y su desvÍo
+var_pred <- cme%*%( 1 + valores%*%inversa.xx%*%t(valores))
+(ds_pred <- sqrt(var_pred))
+
+#EL CALCULO DEL DESVIO DE LA PREDICCION SE USA BIEN PARA EL IC PERO LO MUESTRA MAL
+cbind(est_p2 , est_p2 - qt(0.975,522) * ds_pred, est_p2 + qt(0.975,522) * ds_pred)
+
+#######################################
+####  Gráfico de las estimaciones  ####
+####   de la variable dependiente  ####
+#######################################
+
+#Para ve esto mas claramente, vamos a hacer una regresion lineal simple
+reg1 <- lm(lwage ~ educ)
+
+#Generamos 50 valores entre el máximo y el mínimo de "educ"
+  
+B0 <- seq(min(educ),max(educ),length=50);B0
+  
+#Generamos la estimación para valores de la muestra "Confidence", se.fit muestra el desvío para cada valor
+(est <- predict(reg1,data.frame(educ=B0),interval=c("confidence"),se.fit=T))
+  
+#Generamos la prediccion para valores de una nueva observacion "prediction" "B=B0" dice que use B0 como x en vez de B
+pred <- predict(reg1,data.frame(educ=B0),interval=c("prediction"),se.fit=T)
+  
+#Hacemos el grafico
+{par(mfrow=c(1,1),mar=c(4,4,3,3))
+matplot(B0,cbind(est$fit,pred$fit[,-1]),main="Bandas de Confianza para la estimacion",lty=c(1,2,2,3,3),col=c("black","red","red","blue","blue"),type="l",xlab="Prueba B",ylab="Puntaje",lwd=2)
+  
+#Le colocamos la leyenda
+legend("topleft",c("Estim.Media","Prediccion"),lty=c(2,3),col=c("red","blue"),bty="n")
+}
+
+
+#####################################
+####  Gráfico 3d de una función  ####
+#####################################
+
+#Basado en los datos de "Iris"
+#https://stackoverflow.com/questions/47344850/scatterplot3d-regression-plane-with-residuals/51861588#51861588
+{rm(list=ls())
+  library("scatterplot3d")
+  
+  wh <- iris$Species != "setosa"
+  x  <- iris$Sepal.Width[wh]
+  y  <- iris$Sepal.Length[wh]
+  z  <- iris$Petal.Width[wh]
+  df <- data.frame(x, y, z)
+  LM <- lm(y ~ x + z, df)
+  
+  #Grafico de los datos
+  s3d <- scatterplot3d(x, z, y, pch = 19, type = "p", color = "red",
+                       main = "Plano de Regresion", grid = TRUE, box = FALSE,
+                       mar = c(2.5, 2.5, 2, 1.5), angle = 55)
+  
+  #Plano de Regresion
+  s3d$plane3d(LM, draw_polygon = TRUE, draw_lines = TRUE,
+              polygon_args = list(col = rgb(.1, .2, .7, .5)))
+  
+  #Observaciones positivas
+  wh <- resid(LM) > 0
+  s3d$points3d(x[wh], z[wh], y[wh], pch = 19,col="blue")
+  
+  #Residuos
+  orig     <- s3d$xyz.convert(x, z, y)
+  plane    <- s3d$xyz.convert(x, z, fitted(LM))
+  i.negpos <- 1 + (resid(LM) > 0) # which residuals are above the plane?
+  segments(orig$x, orig$y, plane$x, plane$y, col = "green4", lty = c(2, 1)[i.negpos],
+           lwd = 1.5)
+}
+
+#Plano de Regresión animado
+
+{library("rgl")
+  plot3d(x,y,z, type="p", col="blue", size=1,box=FALSE,xlim = c(1,3.8),ylim = c(3,9),zlim = c(0,4))
+  spheres3d(x,y,z,radius = 0.1,color ="blue")
+  coefs <- coef(LM)
+  a <- coefs["x"]
+  b <- -1
+  c <- coefs["z"]
+  d <- coefs["(Intercept)"]
+  planes3d(a, b, c, d, col = "red", alpha = 0.6)
+}
+
+##############################
+#### Regresión aplicando  ####
+###       Cholesky        ####
+##############################
+
+#https://www.theissaclee.com/post/linearqrandchol/
+
+datos<-wage1[,c("lwage","educ","exper","tenure")]
+y<-as.matrix(datos$lwage)
+x<-as.matrix(cbind(rep(1,nrow(datos)),datos[,2:4]))
+
+#Como  (x´x)*b = x´y, entonces L´L *b = x´y siendo L el triang inf de Chol de (X´x)
+#Entonces L´L*b = x´Y,  L*(L´b)  = X´y
+#Entonces hallamos Z siendo Z = L´b para  L * Z = X´Y con "forward" por ser el inferior
+#Con Z despejado, podemos hallar L´B = Z con backward que nos depeja B
+
+A<-t(x)%*%x
+B<-t(x)%*%y
+L<-chol(A) #Para el inferior
+L
+forwardsolve(L,A,upper.tri = F) #Invierte la superior
+backsolve(L,A,transpose = T)    #Usa la inferior al transponer la superior
+
+#El segundo "backsolve" halla Z con L y X´Y, el primero usa la Z y la L´ para hallar beta
+backsolve(L,backsolve(L,B,transpose = T))
+
+#####################################
+####  Distribución de los betas  ####
+####      por simulación         ####
+#####################################
+
+#Vamos a simular muchas regresiones definiendo algunos parámetros
+
+#Tamaño de cada una de las muestras
+n<-100
+
+#Serie de valores X
+x<-seq(1,100,length.out =n)
+
+#Coeficientes
+beta0<-15
+beta1<-10
+sigma<-4
+
+#Replicaciones
+m<-5000
+
+#Creamos la matriz para guardar los coeficientes y la raiz de CME (el sigma)
+coef<-matrix(0,nrow=m,ncol=3)
+#Hacemos el loop donde guardamos 10.000 coeficientes
+for(i in 1:m){
+#  y<-beta0 + beta1*x + rnorm(length(x),0,sigma)  #Simulación datos normales con media 0 y sigma 4
+# y<-beta0 + beta1*x + rexp(n,1/sigma)-1/sigma  #Para seguir con el sigma=4, lambda debe valer 1/4 y al restar son de media 0
+ y<-beta0 + beta1*x + runif(n,0,sqrt(192) )      #var=(B-A)^2/12 entonces sigma  4 , varianza 16, B=sqrt(192)
+  
+  coef[i,1]<-lm(y~x)$coefficients[1]
+  coef[i,2]<-lm(y~x)$coefficients[2]
+  coef[i,3]<-anova(lm(y~x))[2,3]
+}
+
+#Graficamos los resultados
+plot(density(coef[,1]),lwd=2,col="green4",main="Ordenada")
+hist(coef[,1],breaks = 40,probability = T,col="deepskyblue",main="Histograma de Ordenada",xlab="Ordenada")
+curve(dnorm(x,mean = mean(coef[,1]),sd=sd(coef[,1])),add=T,lwd=2,col="red")
+hist(coef[,2],breaks = 40,probability = T,col="deepskyblue",main="Histograma de Pendiente",xlab="Pendiente")
+curve(dnorm(x,mean = mean(coef[,2]),sd=sd(coef[,2])),add=T,lwd=2,col="red")
+hist(coef[,3],breaks = 40,probability = T,col="deepskyblue",main="Histograma de CME",xlab="CME")
+curve(dnorm(x,mean = mean(coef[,3]),sd=sd(coef[,3])),add=T,lwd=2,col="red")
+
+#Vemos los descriptivos de los valores calculados
+descr_m(coef)
+
+##################################
+#### Simulación por bootstrap ####
+##################################
+
+#https://towardsdatascience.com/bootstrap-regression-in-r-98bfe4ff5007
+#Bootstrap implica tomar una muestra y remuestrear sobre la misma con reposición
+#Generamos las variables para la regresion
+n<-1000
+x<-rnorm(n)
+y<-beta0+beta1*x+rnorm(length(x),0,8)
+
+#Juntamos los datos
+datos<-data.frame(x=x,y=y)
+
+#Vemos la regresión poblacional
+summary(lm(y~x))
+
+#Tomamos una muestra de datos de tamaño n=50 con repo
+d<-50
+muestra<- datos[sample(nrow(datos), d, replace = TRUE),]
+
+#Hacemos la regresion con la muestra
+summary(lm(y~x,data = muestra))
+
+#Hacemos el bootstrap
+#Creamos donde guardar los coeficientes
+ordenada<-NULL
+pendiente<-NULL
+
+#Generamos 1000 coeficientes por bootstrap
+for (i in 1:1000) {
+  #Creating a resampled dataset from the sample data
+  sample_d = muestra[sample(1:nrow(muestra), nrow(muestra), replace = TRUE), ]
+  
+  #Running the regression on these data
+  reg <- lm(y ~ x, data = sample_d)
+  
+  #Saving the coefficients
+  ordenada <-  c(ordenada, reg$coefficients[1])
+  
+  pendiente <- c(pendiente, reg$coefficients[2])
+}
+
+hist(ordenada,breaks = 40,probability = T,col="deepskyblue",main="Histograma de Ordenada",xlab="Ordenada")
+hist(pendiente,breaks = 40,probability = T,col="deepskyblue",main="Histograma de Ordenada",xlab="Ordenada")

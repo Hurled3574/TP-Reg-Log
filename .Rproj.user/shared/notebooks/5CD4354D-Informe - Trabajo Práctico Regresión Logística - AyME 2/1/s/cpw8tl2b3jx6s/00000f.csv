@@ -1,10 +1,50 @@
 "0",""
 "0","download.file(""https://archive.ics.uci.edu/static/public/17/breast+cancer+wisconsin+diagnostic.zip"", ""data/breast+cancer+wisconsin+diagnostic.zip"")"
-"2","Warning: URL https://archive.ics.uci.edu/static/public/17/breast+cancer+wisconsin+diagnostic.zip: cannot open destfile 'data/breast+cancer+wisconsin+diagnostic.zip', reason 'No such file or directory'"
-"2","Warning: download had nonzero exit status"
+"2","probando la URL 'https://archive.ics.uci.edu/static/public/17/breast+cancer+wisconsin+diagnostic.zip'
+"
+"2","downloaded 50 KB
+
+"
 "0","unzip(""data/breast+cancer+wisconsin+diagnostic.zip"", exdir = ""data"")"
-"2","Warning: error 1 al extraer del archivo zip"
+"0",""
 "0","cmama <- read.csv (""data/wdbc.data"", header = FALSE)"
-"2","Warning: no fue posible abrir el archivo 'data/wdbc.data': No such file or directory"
-"2","Error in file(file, ""rt"") : no se puede abrir la conexión
+"0",""
+"0","cmama2 <- cmama [, c(2:12)] #Recorte de datos"
+"0","colnames (cmama2) <-"
+"0","  c("
+"0","    ""diagnostico"","
+"0","    ""radio_medio"","
+"0","    ""textura_media"","
+"0","    ""perimetro_medio"","
+"0","    ""area_media"","
+"0","    ""uniformidad_media"","
+"0","    ""compactabilidad_media"","
+"0","    ""concavidad_media"","
+"0","    ""puntos_concavos_medios"","
+"0","    ""simetria_media"", "
+"0","    ""dimension_fractal_media"")"
+"0",""
+"0","cmama2$diagnostico <- ifelse (cmama2$diagnostico == ""B"", 0, 1)"
+"0","glimpse(cmama2)"
+"1","Rows: 569"
+"1",""
+"1","
+"
+"1","Columns: 11"
+"1",""
+"1","
+"
+"1","$ diagnostico             [3m[38;5;246m<dbl>[39m[23m 1, 1, 1, 1, 1, 1, 1, 1, 1…
+$ radio_medio             [3m[38;5;246m<dbl>[39m[23m 17.99, 20.57, 19.69, 11.4…
+$ textura_media           [3m[38;5;246m<dbl>[39m[23m 10.38, 17.77, 21.25, 20.3…
+$ perimetro_medio         [3m[38;5;246m<dbl>[39m[23m 122.80, 132.90, 130.00, 7…
+$ area_media              [3m[38;5;246m<dbl>[39m[23m 1001.0, 1326.0, 1203.0, 3…
+$ uniformidad_media       [3m[38;5;246m<dbl>[39m[23m 0.11840, 0.08474, 0.10960…
+$ compactabilidad_media   [3m[38;5;246m<dbl>[39m[23m 0.27760, 0.07864, 0.15990…
+$ concavidad_media        [3m[38;5;246m<dbl>[39m[23m 0.30010, 0.08690, 0.19740…
+$ puntos_concavos_medios  [3m[38;5;246m<dbl>[39m[23m 0.14710, 0.07017, 0.12790…
+$ simetria_media          [3m[38;5;246m<dbl>[39m[23m 0.2419, 0.1812, 0.2069, 0…
+$ dimension_fractal_media [3m[38;5;246m<dbl>[39m[23m 0.07871, 0.05667, 0.05999…"
+"1",""
+"1","
 "

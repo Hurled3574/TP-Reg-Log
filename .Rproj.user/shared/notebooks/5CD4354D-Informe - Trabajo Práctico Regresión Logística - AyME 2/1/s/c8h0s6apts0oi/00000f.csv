@@ -12,5 +12,3 @@
 "0","library(pROC)"
 "0","library(ROCR)"
 "0","library(glmulti)"
-"2","Error: package ‘rJava’ could not be loaded
-"
