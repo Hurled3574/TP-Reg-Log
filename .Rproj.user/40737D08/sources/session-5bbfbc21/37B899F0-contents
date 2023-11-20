@@ -1,0 +1,535 @@
+#################################
+####  Análisis Multivariado  ####
+#################################
+  
+###############
+#### Seteo ####
+###############
+
+#Direccionamos el R para no especificar una dirección
+setwd("C:\\Users\\carlo\\Dropbox\\Archivos de Apuntes\\Analisis Multivariado\\Bases y Sintaxis")
+
+#Borramos las cosas anteriores, guardamos los parámetros gráficos básicos, sacamos la notación científica
+{rm(list=ls())
+  oldpar<-par(no.readonly = TRUE)
+  options(scipen=100, digits=5)
+
+  
+#####################################
+#### Instalación y carga         ####
+####  de la librerías necesarias ####
+#####################################
+
+#Cargamos las librerías
+library("foreign")   #Para los archivos SPSS
+library("ICSNP")     #Para T2
+library("rgl")       #Para la ellipse 3D
+library("rrcov")     #Para lambda de Wilks
+library("MVN")       #Para test multivariante
+
+#Levantamos el archivo de SPSS
+base<-read.spss("Analisis Multivariado.sav",to.data.frame = T)
+}
+
+##################################################
+#### Ejercicio 8 Alcornoque Pag 25 Cuadras    ####
+####  Matriz centrada, var-cov y correlación  ####
+##################################################
+
+#Alcornoque: analiza si la perforacion en la planta de corcho tiene relacion con el punto cardinal
+
+#Armamos la base
+alcor<-base[1:28,7:10]
+
+#Armamos como matriz para trabajarlo matricialmente
+alcornoque<-as.matrix(alcor)
+
+#Realizamos el boxplot
+{b<-boxplot(alcor,horizontal = T,col = c("lightblue","green4","red","orange"),main="Comparacion por punto cardinal",xlab="Centigramos de corcho",boxwex=0.6)
+text(x=b$stats[,1],y=1.5,labels=b$stats[,1],cex = 0.8)
+text(x=b$stats[,2],y=2.5,labels=b$stats[,2],cex = 0.8)
+text(x=b$stats[,3],y=3.5,labels=b$stats[,3],cex = 0.8)
+text(x=b$stats[,4],y=4.5,labels=b$stats[,4],cex = 0.8)
+points(x=apply(alcor,2,mean),y=c(1,2,3,4),pch=19,col="darkblue")
+}
+
+#Vemos la cantidad de filas de la matriz
+n<-nrow(alcor);n
+
+###Matriz de Centrado Cuadras Pag 15####
+
+#Creamos una matriz identidad de tamaño n=28
+i<-diag(n)
+head(i)
+
+#Vector columna de unos
+unos<-matrix(rep(1,n));unos
+
+#Creamos la matriz de ponderación P, el primer producto no es matricial, es un producto simple
+p<-i-(1/n)*unos%*%t(unos);p
+
+#Vector de medias por método matricial
+medias.alcor<-t(unos)%*%alcornoque*(1/n)
+medias.alcor
+
+#Lo hacemos por funcion
+apply(alcor,2,mean)
+
+#Matriz de valores Centrados
+#Con los datos
+centrada.alcor<-alcornoque - unos%*%medias.alcor
+centrada.alcor
+
+#Con la matriz de ponderaciones P
+centrado<-p%*%alcornoque;centrado
+
+#Matriz de Var-Cov de los datos por función
+b<-var(alcornoque);b
+
+#Matriz de varianza y Covarianza matricial y comparamos con lo obtenido en la función
+varcov<-(1/(n-1))*t(alcornoque)%*%p%*%alcornoque;varcov;b
+
+#Matriz de correlaciones de los datos por función
+corre<-cor(alcornoque);corre
+
+#Matriz de correlaciones por matrices
+#Necesitamos una matriz con las inversas de las raíces de la diagonal de la matriz var-cov
+d<-solve(diag(sqrt(diag(varcov)),4,4));d
+
+#Matriz de correlaciones
+corr<-d%*%varcov%*%d;corr;corre
+
+###################################
+####      T2 de Hotelling      ####
+### para medias iguales a cero ####
+###################################
+
+#Sacado de Multivariate Observations Seber page 75
+#Construimos una matriz de "restricciones" para transformar los datos
+#los datos son la diferencias entre cada columna
+C=matrix(c(1,-1,0,0,   0,1,-1,0,   0,0,1,-1  ),nrow=3,byrow=TRUE)
+Y=matrix(0,ncol=ncol(alcornoque)-1,nrow=nrow(alcornoque))
+
+for(d in 1:(ncol(C)-1)) {
+  for(i in 1:nrow(alcornoque)) {
+    Y[i,d]=C[d,]%*%alcornoque[i,]
+  }
+}
+
+#Definimos el vector de ceros
+mu0=c(0,0,0)
+HotellingsT2(Y,mu=mu0,test="f")
+
+
+#https://epgp.inflibnet.ac.in/epgpdata/uploads/epgp_content/S000034ST/P001019/M030052/ET/1525691246HotellingT2TestandMANOVAUsingR.pdf
+x <- matrix(c(98,81,38,103,84,38,103,86,42,106,86,42,109,86,42,123,88,42,123,93,44,133,95,50,133,99,46,133,102,51,134,102,51,136,100,51
+              ,138,102,48,138,98,49,141,99,51,147,105,51,149,108,53,153,107,57,155,107,55,155,115,56,158,117,63,159,115,60,162,118,62,
+              177,124,63,97,82,37,99,82,37,104,86,39,103,87,41,106,88,42),ncol = 3,byrow = T)
+
+C=matrix(c(1,-2/3,-1/3,0,1,-1),nrow=2,byrow=TRUE)
+
+Y=matrix(0,ncol=ncol(x)-1,nrow=nrow(x))
+
+for(i in 1:nrow(x)){
+  Y[i,1]=C[1,]%*%x[i,]
+  Y[i,2]=C[2,]%*%x[i,]
+}
+
+mu0=c(0,0)
+HotellingsT2(Y,mu=mu0,test="f")
+
+
+
+
+####################################################################
+####Ejercicio 9 - t2 de Hotelling para probar matriz de medias  ####
+####          Peña pag 302 Ejercicio 10.1                       ####
+####################################################################
+
+rm(list=ls()[!(ls() %in% c('oldpar','base'))])
+#Cargamos las matrices finales por lo que vamos a calcular el T2
+media<-matrix(c(12,4,2));media
+datos<-matrix(c(11.5,4.3,1.2));datos
+
+#Definimos n y p=cantidades de variables
+n<-20
+p<-3
+
+#Vamos a crear dos matrices var-cov
+varcova<-matrix(c(10,4,-5,4,12,-3,-5,-3,4),nrow=3,byrow=T);varcova
+
+#Creamos una nueva matriz de var-cov ¿En que se diferencia de la primera?
+varcovb<-matrix(c(10,0,0,0,12,0,0,0,4),nrow=3,byrow=T);varcovb
+
+#Calculamos la T2
+t2a<-(n-1)%*%t(datos-media)%*%solve(varcova)%*%(datos-media);t2a
+t2b<-(n-1)%*%t(datos-media)%*%solve(varcovb)%*%(datos-media);t2b
+
+#Transformación a la F - Pag 286 Peña
+fa<-(n-p)*t2a/(p*(n-1));fa
+fb<-(n-p)*t2b/(p*(n-1));fb
+
+#Calculamos el p-value, es decir, la probabilidad de un valor mas extremo, 
+#en este caso la parte derecha, que se hace con el "lower.tail"
+pv.fa<-pf(fa,p,(n-p),lower.tail = F);pv.fa
+pv.fb<-pf(fb,p,(n-p),lower.tail = F);pv.fb
+
+#Con la probabilidad, calculamos nuevamente el "critico"
+valorf<-qf(pv.fa,p,(n-p),lower.tail = F);valorf
+
+#####################################################
+#### Pruebas basadas en razones de verosimilitud ####
+#####################################################
+
+####Ejercicio 9 - Esfericidad (misma varianza y sin covarianzas)####
+#### La H0 es que la matriz es de la forma simga^2*I
+#### Ejemplo 10.2 Pagina 307 ###
+
+#Estadistico =n*p*ln(traza(var-cov)/p - n*ln(det(var-cov)))
+#GL = (p+2)*(p-1)/2
+
+esfericidad<-round(n*p*log(sum(diag(varcova))/p)-n*log(det(varcova)),4)
+print(c("El valor del Estadistico es",esfericidad),quote=F)
+
+#Calculamos su pvalue con 5 GL
+pv.chi2<-pchisq(esfericidad,df=(p+2)*(p-1)/2,lower.tail = F);pv.chi2
+print(c("Su P-Valor es",pv.chi2),quote= F)
+
+####Ejercicio 9 - Independencia de la matriz var-cov - ####
+#La matriz es diagonal con covar=0 y varianzas con cualquier valor
+
+#Calculamos la matriz de correlación
+e<-solve(diag(sqrt(diag(varcova)),p,p));e
+correl<-e%*%varcova%*%e;correl
+
+#Estadistico chi=-n*ln(det(matriz de correlaciones)) con GL = p*(p-1)/2 siendo p = 3
+#log es ln, log10 es log
+chi<-(-n)*log(det(correl))
+print(c("El valor del Estadistico es",chi),quote=F)
+
+#Calculamos el p-value con 3 GL
+pv.chi<-pchisq(chi,df=p,lower.tail = F);pv.chi
+
+###################################
+####     Ejercicio 10 -Bumpus  ####
+#### Test con T2 de Hotelling  ####
+###################################
+
+#Para referencias sobre bumpus
+#https://www.ndsu.edu/pubweb/~doetkott/introsas/rawdata/bumpus.html
+
+#Dejamos lo necesario en el "ambiente"
+rm(list=ls()[!(ls() %in% c('oldpar','base'))])
+
+#Generamos la base
+bumpus<-base[,1:6]
+
+#Hacemos un box plot comparativo de una de las variables de cada grupo porque las escalas son muy diferentes
+{a<-bumpus[bumpus$Sobrevivio=="Si","Total"]
+b<-bumpus[bumpus$Sobrevivio=="No","Total"]
+
+m<-boxplot(a, b,main="Comparacion del Largo Total",names=c("Si","No"),col=c("orange","BLUE"), border="black", horizontal = TRUE)
+text(x=m$stats[,1],y=1.5,labels=m$stats[,1],cex = 0.8)
+text(x=m$stats[,2],y=2.5,labels=m$stats[,2],cex=0.8)
+points(x=mean(a),y=1,pch=19,col="red")
+points(x=mean(b),y=2,pch=19,col="red")
+}
+
+#Hacemos grafico
+{a<-bumpus[bumpus$Sobrevivio=="Si","Alas"]
+b<-bumpus[bumpus$Sobrevivio=="No","Alas"]
+
+n<-boxplot(a, b,main="Comparacion del largo de Alas",names=c("Si","No"),col=c("orange","BLUE"), border="black", horizontal = TRUE)
+text(x=n$stats[,1],y=1.5,labels=n$stats[,1],cex = 0.8)
+text(x=n$stats[,2],y=2.5,labels=n$stats[,2],cex=0.8)
+points(x=mean(a),y=1,pch=19,col="red")
+points(x=mean(b),y=2,pch=19,col="red")
+}
+
+{
+a<-bumpus[bumpus$Sobrevivio=="Si","Cabeza"]
+b<-bumpus[bumpus$Sobrevivio=="No","Cabeza"]
+
+o<-boxplot(a, b,main="Comparacion del largo de la Cabeza",names=c("Si","No"),col=c("orange","BLUE"), border="black", horizontal = TRUE)
+text(x=o$stats[,1],y=1.5,labels=o$stats[,1],cex = 0.8)
+text(x=o$stats[,2],y=2.5,labels=o$stats[,2],cex=0.8)
+points(x=mean(a),y=1,pch=19,col="red")
+points(x=mean(b),y=2,pch=19,col="red")
+}
+
+{a<-bumpus[bumpus$Sobrevivio=="Si","Humero"]
+b<-bumpus[bumpus$Sobrevivio=="No","Humero"]
+
+p<-boxplot(a, b,main="Comparacion del largo del Humero",names=c("Si","No"),col=c("orange","BLUE"), border="black", horizontal = TRUE)
+text(x=p$stats[,1],y=1.5,labels=p$stats[,1],cex = 0.8)
+text(x=p$stats[,2],y=2.5,labels=p$stats[,2],cex=0.8)
+points(x=mean(a),y=1,pch=19,col="red")
+points(x=mean(b),y=2,pch=19,col="red")
+}
+
+{a<-bumpus[bumpus$Sobrevivio=="Si","Esternon"]
+b<-bumpus[bumpus$Sobrevivio=="No","Esternon"]
+
+q<-boxplot(a, b,main="Comparacion del largo del Esternon",names=c("Si","No"),col=c("orange","BLUE"), border="black", horizontal = TRUE)
+text(x=q$stats[,1],y=1.5,labels=q$stats[,1],cex = 0.8)
+text(x=q$stats[,2],y=2.5,labels=q$stats[,2],cex=0.8)
+points(x=mean(a),y=1,pch=19,col="red")
+points(x=mean(b),y=2,pch=19,col="red")
+}
+
+#Veamos los histogramas de cada variable sin segmentación
+par(mfrow=c(2,2),mar=c(2,2,2,2))
+for(i in 1:4){
+w<-hist(bumpus[,i],breaks = 10,col=rainbow(10),freq = T,main=names(bumpus)[i])
+g<-w$counts/w$density
+curve(dnorm(x,mean=mean(bumpus[,i]),sd=sd(bumpus[,i]))*g[1],add=TRUE, col="blue",lty=1,lwd=3)
+}
+
+#Hagamos los test de normalidad univariante y multivariante, por defecto saca "Mardia"
+#desc=F  saca los descriptivos
+#Shapiro-Wilks
+mvn(data = bumpus[,1:5],univariateTest = "SW",desc=F)
+
+#Cramer-Von Mises
+mvn(data = bumpus[,1:5],univariateTest = "CVM",desc=F)
+
+#KS con correccion de Lilliefors
+mvn(data = bumpus[,1:5],univariateTest = "Lillie",desc=F)
+
+#Shapiro-Francia
+mvn(data = bumpus[,1:5],univariateTest = "SF",desc=F)
+
+####Sacamos los multivariantes sin descriptivos ni univariados####
+
+#Multivariante de Henze-Zirkler
+mvn(data = bumpus[,1:5],mvnTest = "hz",desc=F)$multivariateNormality
+
+#Multivariante de Royston
+mvn(data = bumpus[,1:5],mvnTest = "royston",desc=F)$multivariateNormality
+
+#Multivariante de Doornik-Hansen
+mvn(data = bumpus[,1:5],mvnTest = "dh",desc=F)$multivariateNormality
+
+#Deteccion de valores atipicos multivariantes
+par(oldpar)
+mvn(data = bumpus[,1:5],mvnTest = "dh",desc=F,multivariateOutlierMethod = "quan")
+#Los grados de libertad son las variables
+
+mvn(data = bumpus[,1:5],mvnTest = "dh",desc=F,multivariateOutlierMethod = "adj")
+
+#Hacemos el test, directamente da el resultado de la transformacion a la F
+a<-bumpus[bumpus$Sobrevivio=="Si",1:5]
+b<-bumpus[bumpus$Sobrevivio=="No",1:5]
+c<-HotellingsT2(a,b);c
+
+#Lo hacemos manualmente
+#Armamos el n
+nns<-nrow(b)
+ns<-nrow(a)
+p<-ncol(bumpus[,1:5])
+
+#Calculamos los vectores de medias
+medians<-apply(b,2,mean);medians
+medias<-apply(a,2,mean);medias
+
+#Matrices de Var-cov
+varns<-var(b)
+vars<-var(a)
+
+#Calculamos la varianza amalgamada
+varam<-((nns-1)*varns+(ns-1)*vars)/(ns+nns-2);varam
+
+#Armamos la T2 de Hotelling
+t2bumpus<-(nns*ns)*t(medians-medias)%*%solve(varam)%*%(medians-medias)/((nns+ns));t2bumpus
+
+#Trasformación a la F
+fbumpus<-(ns+nns-p-1)*t2bumpus/((ns+nns-2)*p);fbumpus
+
+#Calculamos su PV y comparamos
+pv.fbumpus<-pf(fbumpus,p,(ns+nns-p-1),lower.tail = F);pv.fbumpus;c
+
+##################################################
+#### Appplied Multivariate Statistic Analysis ####
+####           Ricahrd Johnson 3º E           ####
+####       pag 343 Ej 6.18 Tabla6.9           ####
+##################################################
+
+#Generamos los datos
+datos<-data.frame(Largo=c(98,103,103,105,109,123,123,133,133,133,134,136,138,138,141,147,149,153,155,155,158,159,162,177
+                          ,93,94,96,101,102,103,104,106,107,112,113,114,116,117,117,119,120,120,121,125,127,128,131,135),
+                  Ancho=c(81,84,86,86,88,92,95,99,102,102,100,102,98,99,105,108,107,107,115,117,115,118,124,132
+                          ,74,78,80,84,85,81,83,83,82,89,88,86,90,90,91,93,89,93,95,93,96,95,95,106),
+                  Alto=c(38,38,42,42,44,50,46,51,51,51,48,49,51,51,53,57,55,56,63,60,62,63,61,67,
+                         37,35,35,39,38,37,39,39,38,40,40,40,43,41,41,41,40,44,42,45,45,45,46,47),
+                  Sexo=factor(rep(c(1,2),c(24,24)),labels = c("Femenino","Masculino")) )
+
+#Calculamos el valor transformado a la F del Estadistico T2 de Hotelling
+a<-datos[datos$Sexo=="Masculino",1:3]
+b<-datos[datos$Sexo=="Femenino",1:3]
+
+HotellingsT2(a,b)
+
+#Al hacerlo con una columna de corte ( datos [,4] ), los datos a analizar deben estar como matriz
+HotellingsT2(as.matrix(datos[,1:3])~datos[,4])
+
+#Lo Hacemos manualmente
+#Armamos el n
+masc<-nrow(datos[datos$Sexo=="Masculino",1:3])
+fem<-nrow(datos[datos$Sexo=="Femenino",1:3])
+p<-3
+
+#Calculamos los vectores de medias y el de diferencias de medias
+(masc_m<-apply(datos[datos$Sexo=="Masculino",1:3],2,mean))
+(fem_m<-apply(datos[datos$Sexo=="Femenino",1:3],2,mean))
+
+#Matrices de Var-cov
+var_m<-var(datos[datos$Sexo=="Masculino",1:3])
+var_f<-var(datos[datos$Sexo=="Femenino",1:3])
+
+#Calculamos la varianza amalgamada
+varam<-((masc-1)*var_m+(fem-1)*var_f)/(masc+fem-2);varam
+
+#Armamos la T2 de Hotelling
+t2<-(masc*fem)*t(masc_m-fem_m)%*%solve(varam)%*%(masc_m-fem_m)/((masc+fem));t2
+
+#Transformación a la F
+f<-(masc+fem-p-1)*t2/((masc+fem-2)*p);f
+
+#Calculamos su PV
+pv.f<-pf(f,p,(masc+fem-p-1),lower.tail = F);pv.f
+
+#Gráfico 3D de los datos
+#Armamos las diferencias de cada observación y el promedio de las diferencias
+dif<-datos[datos$Sexo=="Femenino",1:3]-datos[datos$Sexo=="Masculino",1:3]
+dif_m<-fem_m-masc_m
+apply(dif,2,mean)
+
+plot3d(dif, box=TRUE,xlab="x", ylab="y", zlab="z",col = "blue",pch=19)
+plot3d(ellipse3d(varam,centre=dif_m, level=.9),
+       col="cyan", alpha=0.5, add = TRUE)
+
+##############################################################
+####  Lambda de Wilks - Ejercicio de Iris Pag 57 Cuadras  ####
+##############################################################
+
+#Fijamos la base que vamos a usar
+attach(iris)
+
+#Vemos los boxplot de cada variable por grupo
+boxplot(Sepal.Length~Species,horizontal=TRUE,main="Largo del Sepalo por Grupo",col=c("red","darkblue","green4"))
+boxplot(Sepal.Width~Species,horizontal=TRUE,main="Ancho del Sepalo por Grupo",col=c("red","darkblue","green4"))
+boxplot(Petal.Length~Species,horizontal=TRUE,main="Largo del Petalo por Grupo",col=c("red","darkblue","green4"))
+boxplot(Petal.Width~Species,horizontal=TRUE,main="Ancho del Petalo por Grupo",col=c("red","darkblue","green4"))
+
+#Test Lambda de Wilks, base "iris", variable 1 a 4 agrupada por la 5
+Wilks.test(iris[,1:4],grouping=iris[,5], method="c")
+
+#Mismo test, Species es el grupo"~"denota todo el resto de las variables 
+Wilks.test(Species~., data=iris)
+
+#Approximation Rao es la F
+Wilks.test(Species~., data=iris,approximation="Rao")
+
+#Vamos a calcularlo manualmente
+#Calculamos la media general, ,1:4 son las columnas 1 a 4, 2 es por fila y mean es media
+(m.general<-apply(iris[,1:4],2,mean))
+
+#Calculamos las medias para cada grupo
+(media.g1<-apply(iris[iris$Species=="setosa",1:4],2,mean))
+(media.g2<-apply(iris[iris$Species=="virginica",1:4],2,mean))
+(media.g3<-apply(iris[iris$Species=="versicolor",1:4],2,mean))
+
+#Dispersion entre grupos: media del grupo contra media general
+#Se crea una matriz que define la suma de las diferencias entre la media de cada variable
+#y la media en cada grupo HACIENDO TODAS LAS COMBINACIONAES ENTRE VARIABLES
+(dispersion.eg1<-50*(media.g1-m.general)%*%t(media.g1-m.general))
+(dispersion.eg2<-50*(media.g2-m.general)%*%t(media.g2-m.general))
+(dispersion.eg3<-50*(media.g3-m.general)%*%t(media.g3-m.general))
+
+#Dispersion total entre grupos
+(dispersion.eg<-dispersion.eg1+dispersion.eg2+dispersion.eg3)
+
+#Dispersion intra-grupos:cada valor menos media del grupo
+#Para hacer la resta de matrices, generamos una matriz de 50 filas donde cada fila es la media del grupo
+a<-matrix(c(rep(media.g1[1],50),rep(media.g1[2],50),rep(media.g1[3],50),rep(media.g1[4],50)),nrow=50);a
+
+#Guardamos como matriz y hacemos la resta de matrices
+b<-as.matrix(iris[iris$Species=="setosa",1:4]-a);b
+
+#Hacemos la dispersion intra de grupo 1
+dispersion.ig1<-t(b)%*%b
+
+#Repetimos el proceso para los grupos 2
+c<-matrix(c(rep(media.g2[1],50),rep(media.g2[2],50),rep(media.g2[3],50),rep(media.g2[4],50)),nrow=50)
+#Guardamos como matriz y hacemos la resta de matrices
+d<-as.matrix(iris[iris$Species=="virginica",1:4]-c)
+#Hacemos la dispersion intra de grupo 2
+dispersion.ig2<-t(d)%*%d
+
+#Para el grupo 3
+e<-matrix(c(rep(media.g3[1],50),rep(media.g3[2],50),rep(media.g3[3],50),rep(media.g3[4],50)),nrow=50)
+#Guardamos como matriz y hacemos la resta de matrices
+f<-as.matrix(iris[iris$Species=="versicolor",1:4]-e)
+#Hacemos la dispersion intra de grupo 3
+dispersion.ig3<-t(f)%*%f
+
+#Sumamos las matrices para hallar la dispersion intra total
+(dispersion.ig<-dispersion.ig1+dispersion.ig2+dispersion.ig3)
+
+#Con las dos matrices de dispersion, intra y entre grupos, calculamos el lambda de Wilks
+#El lambda es el cociente entre el determinante de la dispersion intra dividido el determinante de la suma entre e intra (dispersion total)
+lambda<-det(dispersion.ig)/(det(dispersion.ig+dispersion.eg));lambda
+
+#Como no tenemos tabulado la distribucion lambda de Wilks la aproximamos a la chi-cuadrado
+
+#Definimos el n, p y g
+n<-nrow(iris)
+g<-3 #Grupos
+p<-4 #Variables 
+
+#Aproximacion a la chi del apunte de SPSS para analisis discriminante Pag 13, use el absoluto de todo, este si da
+(lambda.chi2<-round(abs(((n-1)-(p+g)/2)*log(lambda)),1))
+
+#Ahora vamos a trabajar con los grados de libertad de la chi
+#Siendo grupos=g=3 y variables=p=4, la chi tendra (g-1)*p grados de libertad
+(gl.chi<-(g-1)*p)
+
+#Pedimos el P-Value de la chi por derecha donde H0 es que las medias de los grupos son iguales ***DIFIERE EL PV RESPECTO DEl QUE DA LA FUNCION**
+pchisq(lambda.chi2,gl.chi,lower.tail = FALSE)
+
+#######CORRECIONES AL CUADRAS#######
+#GL LAMBDA (PAG 36 ARRIBA ITEM 2.9) (p,n-q,q) y deberia ser (p, n-g, g-1) siendo q=g-1, esto esta en la pag 47
+
+#Solucionado con 100 Problemas Resueltos de Estadística Multivariante Implementados en Matlab Escrito por Amparo Baillo Moreno
+#(p, n-g, g-1) el libro lo toma como (p,a,b) y plantea la formula como a+b=(n-g) + (g-1) = n-1
+#por eso en la formula del m, usar n-1 y no n (pag 62 funcion lambda de Wilks)
+#Comparando gl 2.9 con gl pag 46   t-q = n-g, siendo q=g-1, sacanos que t(cuadras) = n-1 = a+b (100)
+
+#Tambien la aproximamos a la F que es un poco mas complicado Pag 36 Formula 2.9 Cuadras
+#Definimos m=n-(p+q+1)/2, lambda=l=(p*q-2)/4, s=raiz((p^2*q^2-4)*(p^2+q^2-5)) 
+#Los grados de libertad de Lambda de Wilks son p=p, a=n-g, q=g-1
+
+#q es grupos menos 1
+#p es cantidad de variables
+q=g-1
+m<-n-1-(p+q+1)/2
+l<-(p*q-2)/4
+s<-sqrt((p^2*q^2-4)/(p^2+q^2-5))
+
+#Grados de Libertad de la F
+(gl.n<-p*q)
+(gl.d<-m*s-2*l)
+
+#Aproximación al F (pequeña diferencia con el libro)
+F<-(1-lambda^(1/s))/lambda^(1/s)*(gl.d/gl.n);F
+
+#Buscamos el critico
+qf(0.95,gl.n,gl.d)
+
+#calculamos el PV
+(pv.F<-pf(F,gl.n,gl.d,lower.tail = FALSE))
+
+#sacamos la F de un apunte "RPubs - MANOVA &amp; Boxplots for IRIS dataset"
+m1 <- manova(cbind(Sepal.Length,Sepal.Width,Petal.Length,Petal.Width) ~ Species, iris)
+summary.aov(m1, test = "Wilks")
+

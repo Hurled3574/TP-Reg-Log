@@ -1,6 +1,0 @@
-"0","curva <- roc(referencia, prediccion)"
-"2","Setting levels: control = 0, case = 1
-"
-"2","Setting direction: controls < cases
-"
-"0","plot(1-curva$specificities, curva$sensitivities, type=""l"",xlab=""1-Especificidad"",ylab=""Sensibilidad"",lwd=2,col=""blue"",xaxs=""i"",yaxs=""i"")"

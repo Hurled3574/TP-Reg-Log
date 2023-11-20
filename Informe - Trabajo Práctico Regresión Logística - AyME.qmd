@@ -1,6 +1,6 @@
 ---
 title: "Informe - Trabajo Práctico Regresión Logística - AyME"
-author: "ASSANELLI Franco"
+author: ""
 format: html
 editor: visual
 ---
