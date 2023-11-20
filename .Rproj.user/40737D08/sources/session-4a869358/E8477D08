@@ -3,7 +3,7 @@
     "path": "~/GitHub/TP-Reg-Log/Informe - Trabajo Práctico Regresión Logística - AyME 2.qmd",
     "project_path": "Informe - Trabajo Práctico Regresión Logística - AyME 2.qmd",
     "type": "quarto_markdown",
-    "hash": "1578902678",
+    "hash": "0",
     "contents": "",
     "dirty": false,
     "created": 1700434019348.0,
@@ -16,7 +16,7 @@
         "Source": "Source",
         "docOutlineVisible": "0",
         "cursorPosition": "16,18",
-        "scrollLine": "11",
+        "scrollLine": "0",
         "rmdVisualModeLocation": "127:0",
         "rmdVisualCollapsedChunks": ""
     },
@@ -25,7 +25,7 @@
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1700435225889,
+    "last_content_update": 1700437404103,
     "read_only": false,
     "read_only_alternatives": []
 }
