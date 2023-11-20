@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="ASSANELLI Franco">
+<meta name="author" content="">
 
 <title>Informe - Trabajo Práctico Regresión Logística - AyME</title>
 <style>
@@ -69,6 +69,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="Informe - Trabajo Práctico Regresión Logística - AyME 2_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="Informe - Trabajo Práctico Regresión Logística - AyME 2_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
 
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 </head>
 
@@ -87,12 +89,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div class="quarto-title-meta">
 
-    <div>
-    <div class="quarto-title-meta-heading">Author</div>
-    <div class="quarto-title-meta-contents">
-             <p>ASSANELLI Franco </p>
-          </div>
-  </div>
     
   
     
@@ -433,8 +429,10 @@ Null Deviance:      751.4
 Residual Deviance: 161.7    AIC: 169.7</code></pre>
 </div>
 </div>
-<p>##Postulación del modelo</p>
-<p>Así, se arriba a un modelo más sencillo, más preciso y que explica mejor el criterio de diagnóstico en base a las medidas del tamaño, la textura y la forma del tumor</p>
+</section>
+<section id="postulación-del-modelo" class="level2">
+<h2 class="anchored" data-anchor-id="postulación-del-modelo">Postulación del modelo</h2>
+<p>Así, se arriba a un modelo más sencillo, más preciso y que explica mejor el criterio de diagnóstico en base a las medidas del tamaño, la textura y la forma del tumor, mediante el criterio de información de Akkaike</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>cmama3 <span class="ot">&lt;-</span> cmama2[, <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">9</span>)]</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -464,18 +462,13 @@ AIC: 169.7
 
 Number of Fisher Scoring iterations: 8</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vif</span>(modelo_aic)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>         textura_media             area_media puntos_concavos_medios 
-              1.361215               1.044589               1.313795 </code></pre>
-</div>
 </div>
 </section>
 <section id="verificación-del-modelo" class="level2">
 <h2 class="anchored" data-anchor-id="verificación-del-modelo">Verificación del modelo</h2>
 <p>Verificamos que el factor de inflación de la varianza (VIF) de cada variable sea menor a 5.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vif</span>(modelo_aic)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vif</span>(modelo_aic)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>         textura_media             area_media puntos_concavos_medios 
               1.361215               1.044589               1.313795 </code></pre>
@@ -486,7 +479,7 @@ Number of Fisher Scoring iterations: 8</code></pre>
 <h2 class="anchored" data-anchor-id="interpretación-del-modelo">Interpretación del modelo</h2>
 <p>Coeficientes e intervalos de confianza para cada variable predictora.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">exp</span>(<span class="fu">cbind</span>(<span class="fu">coef</span>(modelo_aic),<span class="fu">confint.default</span>(modelo_aic)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">exp</span>(<span class="fu">cbind</span>(<span class="fu">coef</span>(modelo_aic),<span class="fu">confint.default</span>(modelo_aic)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                                           2.5 %       97.5 %
 (Intercept)            5.326061e-08 1.230763e-09 2.304825e-06
@@ -496,29 +489,69 @@ puntos_concavos_medios 1.336359e+44 8.968494e+32 1.991255e+55</code></pre>
 </div>
 </div>
 </section>
+<section id="pseudo-r2" class="level2">
+<h2 class="anchored" data-anchor-id="pseudo-r2">Pseudo <span class="math inline">\(R^2\)</span></h2>
+<p>Se mide la reducción proporcional de la variación en el criterio de Diagnóstico al utilizar las variables de Textura, Área y Puntos Cóncavos medios. El coeficiente de determinación <span class="math inline">\(R^2\)</span> de Nagelkerke suele ser más bajo que el coeficiente de determinación de <span class="math inline">\(R^2\)</span>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PseudoR2</span>(modelo_aic, <span class="at">which =</span> <span class="fu">c</span>(<span class="st">"Nagelkerke"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Nagelkerke 
+ 0.8803015 </code></pre>
+</div>
+</div>
+<p>Por lo tanto, hay una reducción del 88% de la variación en el criterio de Diagnóstico</p>
+</section>
+<section id="prueba-de-bondad-de-ajuste-hosmer-lemeshow" class="level2">
+<h2 class="anchored" data-anchor-id="prueba-de-bondad-de-ajuste-hosmer-lemeshow">Prueba de Bondad de Ajuste Hosmer-Lemeshow</h2>
+<p>Se realiza una prueba de bondad de ajuste del modelo de regresión logística.</p>
+<p>La hipótesis nula es que el modelo está bien ajustado</p>
+<p>Y la hipótesis alternativa es que no lo está.</p>
+<p>El estadístico de la prueba es el Chi-Cuadrado de Pearson con nivel de significancia de 0.95 y 10 (clases) - 2 grados de libertad</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">HosmerLemeshowTest</span>(<span class="at">fit =</span> <span class="fu">fitted</span>(modelo_aic), <span class="at">obs =</span> cmama3<span class="sc">$</span>diagnostico)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$C
+
+    Hosmer-Lemeshow C statistic
+
+data:  fitted(modelo_aic) and cmama3$diagnostico
+X-squared = 3.4834, df = 8, p-value = 0.9005
+
+
+$H
+
+    Hosmer-Lemeshow H statistic
+
+data:  fitted(modelo_aic) and cmama3$diagnostico
+X-squared = 3.6374, df = 8, p-value = 0.8883</code></pre>
+</div>
+</div>
+<p>La prueba de hipótesis no rechaza la hipótesis nula.</p>
+<p>Por lo tanto, el modelo de regresión logística está bien ajustado.</p>
+</section>
 <section id="predicción-del-modelo" class="level2">
 <h2 class="anchored" data-anchor-id="predicción-del-modelo">Predicción del modelo</h2>
 <p>Predicción de la probabilidad de que el tumor sea maligno.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>referencia <span class="ot">&lt;-</span> cmama3<span class="sc">$</span>diagnostico</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>prediccion <span class="ot">&lt;-</span> <span class="fu">predict</span>(modelo_aic, <span class="at">type=</span><span class="st">"response"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>referencia <span class="ot">&lt;-</span> cmama3<span class="sc">$</span>diagnostico</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>prediccion <span class="ot">&lt;-</span> <span class="fu">predict</span>(modelo_aic, <span class="at">type=</span><span class="st">"response"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Curva ROC y área bajo la curva ROC.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>curva <span class="ot">&lt;-</span> <span class="fu">roc</span>(referencia, prediccion)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>curva <span class="ot">&lt;-</span> <span class="fu">roc</span>(referencia, prediccion)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Setting levels: control = 0, case = 1</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Setting direction: controls &lt; cases</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="dv">1</span><span class="sc">-</span>curva<span class="sc">$</span>specificities, curva<span class="sc">$</span>sensitivities, <span class="at">type=</span><span class="st">"l"</span>,<span class="at">xlab=</span><span class="st">"1-Especificidad"</span>,<span class="at">ylab=</span><span class="st">"Sensibilidad"</span>,<span class="at">lwd=</span><span class="dv">2</span>,<span class="at">col=</span><span class="st">"blue"</span>,<span class="at">xaxs=</span><span class="st">"i"</span>,<span class="at">yaxs=</span><span class="st">"i"</span>)</span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="fu">segments</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="at">lwd=</span><span class="dv">2</span>,<span class="at">col=</span><span class="st">"red"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="dv">1</span><span class="sc">-</span>curva<span class="sc">$</span>specificities, curva<span class="sc">$</span>sensitivities, <span class="at">type=</span><span class="st">"l"</span>,<span class="at">xlab=</span><span class="st">"1-Especificidad"</span>,<span class="at">ylab=</span><span class="st">"Sensibilidad"</span>,<span class="at">lwd=</span><span class="dv">2</span>,<span class="at">col=</span><span class="st">"blue"</span>,<span class="at">xaxs=</span><span class="st">"i"</span>,<span class="at">yaxs=</span><span class="st">"i"</span>)</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="fu">segments</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="at">lwd=</span><span class="dv">2</span>,<span class="at">col=</span><span class="st">"red"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Informe---Trabajo-Práctico-Regresión-Logística---AyME-2_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+<p><img src="Informe---Trabajo-Práctico-Regresión-Logística---AyME-2_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid" width="672"></p>
 </div>
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Area bajo la curva ROC</span></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>(areaRoc<span class="ot">&lt;-</span><span class="fu">auc</span>(referencia, prediccion)); <span class="fu">ci</span>(areaRoc)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Area bajo la curva ROC</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>(areaRoc<span class="ot">&lt;-</span><span class="fu">auc</span>(referencia, prediccion)); <span class="fu">ci</span>(areaRoc)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Setting levels: control = 0, case = 1
 Setting direction: controls &lt; cases</code></pre>
@@ -532,8 +565,8 @@ Setting direction: controls &lt; cases</code></pre>
 </div>
 <p>Corte óptimo de la curva ROC</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>(opt <span class="ot">&lt;-</span> <span class="fu">coords</span>(curva, <span class="st">"best"</span>, <span class="at">ret=</span><span class="fu">c</span>(<span class="st">"threshold"</span>, <span class="st">"specificity"</span>, <span class="st">"sensitivity"</span>, <span class="st">"accuracy"</span>,</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>                                  <span class="st">"tn"</span>, <span class="st">"tp"</span>, <span class="st">"fn"</span>, <span class="st">"fp"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>(opt <span class="ot">&lt;-</span> <span class="fu">coords</span>(curva, <span class="st">"best"</span>, <span class="at">ret=</span><span class="fu">c</span>(<span class="st">"threshold"</span>, <span class="st">"specificity"</span>, <span class="st">"sensitivity"</span>, <span class="st">"accuracy"</span>,</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>                                  <span class="st">"tn"</span>, <span class="st">"tp"</span>, <span class="st">"fn"</span>, <span class="st">"fp"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>          threshold specificity sensitivity  accuracy  tn  tp fn fp
 threshold 0.4540945   0.9579832   0.9150943 0.9420035 342 194 18 15</code></pre>
@@ -541,9 +574,9 @@ threshold 0.4540945   0.9579832   0.9150943 0.9420035 342 194 18 15</code></pre>
 </div>
 <p>Tabla de clasificación</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Según corte óptimo de corte por Youden</span></span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>prediccion_clases <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(prediccion <span class="sc">&gt;</span> opt<span class="sc">$</span>threshold, <span class="dv">1</span>, <span class="dv">0</span>)</span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a><span class="fu">confusionMatrix</span>(<span class="at">data =</span> <span class="fu">factor</span>(prediccion_clases), <span class="at">reference =</span> <span class="fu">factor</span>(cmama3<span class="sc">$</span>diagnostico), <span class="at">positive =</span> <span class="st">"1"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Según corte óptimo de corte por Youden</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>prediccion_clases <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(prediccion <span class="sc">&gt;</span> opt<span class="sc">$</span>threshold, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a><span class="fu">confusionMatrix</span>(<span class="at">data =</span> <span class="fu">factor</span>(prediccion_clases), <span class="at">reference =</span> <span class="fu">factor</span>(cmama3<span class="sc">$</span>diagnostico), <span class="at">positive =</span> <span class="st">"1"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Confusion Matrix and Statistics
 
