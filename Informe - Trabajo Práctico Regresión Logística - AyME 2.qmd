@@ -190,17 +190,29 @@ exp(cbind(coef(modelo_aic),confint.default(modelo_aic)))
 
 ## Pseudo $R^2$
 
+Se mide la reducción proporcional de la variación en el criterio de Diagnóstico al utilizar las variables de Textura, Área y Puntos Cóncavos medios. El coeficiente de determinación $R^2$ de Nagelkerke suele ser más bajo que el coeficiente de determinación de $R^2$.
+
 ```{r}
-PseudoR2( modelo_aic, which = c("Nagelkerke", "AIC") )
+PseudoR2(modelo_aic, which = c("Nagelkerke"))
 ```
+
+Por lo tanto, hay una reducción del 88\% de la variación en el criterio de Diagnóstico
 
 ## Prueba de Bondad de Ajuste Hosmer-Lemeshow
 
-Se realiza una prueba de 
+Se realiza una prueba de bondad de ajuste del modelo de regresión logística.
+
+La hipótesis nula es que el modelo está bien ajustado
+
+Y la hipótesis alternativa es que no lo está.
+
+El estadístico de la prueba es el Chi-Cuadrado de Pearson con nivel de significancia de 0.95 y 10 (clases) - 2 grados de libertad
 
 ```{r}
 HosmerLemeshowTest(fit = fitted(modelo_aic), obs = cmama3$diagnostico)
 ```
+La prueba de hipótesis no rechaza la hipótesis nula.
+
 Por lo tanto, el modelo de regresión logística está bien ajustado.
 
 ## Predicción del modelo
