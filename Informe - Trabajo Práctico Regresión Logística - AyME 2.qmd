@@ -1,6 +1,6 @@
 ---
 title: "Informe - Trabajo Práctico Regresión Logística - AyME"
-author: ""
+author: "ASSANELLI Franco [acá KUZMINSKI Nicolás tiene que poner él mismo su nombre, como cuando un ingeniero o un arquitecto ponen la firma del puente construido]"
 format: html
 editor: visual
 ---
