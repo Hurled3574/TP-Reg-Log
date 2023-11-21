@@ -1,0 +1,16 @@
+# Plot the probability density function
+curve (dt (x, df), from = -4, to = 4, xlab = "t", ylab = "Density", main = "One-sample t-test")
+abline (v = 0, lty = 2) # add a vertical line at zero
+abline (h = 0) # add a horizontal line at zero
+
+# Highlight the rejection region
+x <- c (t_lower, seq (t_lower, t_upper, 0.01), t_upper) # x values for the rejection region
+y <- dt (x, df) # y values for the rejection region
+polygon (x, y, col = "red", border = NA) # fill the rejection region with red color
+abline (v = c (t_lower, t_upper), lwd = 2) # add vertical lines at the critical values
+
+# Highlight the p-value region
+x <- c (-4, seq (-4, -t, 0.01), -t, t, seq (t, 4, 0.01), 4) # x values for the p-value region
+y <- dt (x, df) # y values for the p-value region
+polygon (x, y, col = "blue", border = NA) # fill the p-value region with blue color
+abline (v = t, lwd = 2) # add a vertical line at the observed test statistic

@@ -488,6 +488,9 @@ area_media             1.007807e+00 1.004944e+00 1.010677e+00
 puntos_concavos_medios 1.336359e+44 8.968494e+32 1.991255e+55</code></pre>
 </div>
 </div>
+<p>Por cada aumento en una unidad de la textura media del tumor, se estima que la chance de que el diagnóstico del tumor sea maligno aumenta entre <span class="math inline">\(1.242\)</span> y <span class="math inline">\(1.544\)</span>.</p>
+<p>Por cada aumento en una unidad del área media del tumor, se estima que la chance de que el diagnóstico del tumor sea maligno aumenta entre <span class="math inline">\(1.005\)</span> y <span class="math inline">\(1.011\)</span>.</p>
+<p>Por cada aumento en una unidad de la cantidad de puntos cóncavos medios del tumor, se estima que la chance de que el diagnóstico sea que el tumor sea maligno aumenta entre <span class="math inline">\(8.968 \times 10^{32}\)</span> y <span class="math inline">\(1.991 \times 10^{55}\)</span>.</p>
 </section>
 <section id="pseudo-r2" class="level2">
 <h2 class="anchored" data-anchor-id="pseudo-r2">Pseudo <span class="math inline">\(R^2\)</span></h2>
@@ -508,22 +511,44 @@ puntos_concavos_medios 1.336359e+44 8.968494e+32 1.991255e+55</code></pre>
 <p>Y la hipótesis alternativa es que no lo está.</p>
 <p>El estadístico de la prueba es el Chi-Cuadrado de Pearson con nivel de significancia de 0.95 y 10 (clases) - 2 grados de libertad</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">HosmerLemeshowTest</span>(<span class="at">fit =</span> <span class="fu">fitted</span>(modelo_aic), <span class="at">obs =</span> cmama3<span class="sc">$</span>diagnostico)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">HosmerLemeshowTest</span>(<span class="at">fit =</span> <span class="fu">fitted</span>(modelo_aic), <span class="at">obs =</span> cmama3<span class="sc">$</span>diagnostico)<span class="sc">$</span>C</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>$C
-
+<pre><code>
     Hosmer-Lemeshow C statistic
 
 data:  fitted(modelo_aic) and cmama3$diagnostico
-X-squared = 3.4834, df = 8, p-value = 0.9005
-
-
-$H
-
-    Hosmer-Lemeshow H statistic
-
-data:  fitted(modelo_aic) and cmama3$diagnostico
-X-squared = 3.6374, df = 8, p-value = 0.8883</code></pre>
+X-squared = 3.4834, df = 8, p-value = 0.9005</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Creación curva de densidad</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fl">3.4834</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="fu">curve</span>(<span class="fu">dchisq</span>(x, <span class="dv">8</span>), <span class="at">from =</span> <span class="dv">0</span>, <span class="at">to =</span> <span class="dv">40</span>,</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">main =</span> <span class="st">'Prueba de Bondad de Ajuste Hosmer-Lemeshow (gl = 8)'</span>, <span class="at">xlab =</span> <span class="st">'Estadístico C'</span>,</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">ylab =</span> <span class="st">'Densidad de Probabilidad'</span>,</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">lwd =</span> <span class="dv">2</span>)</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="co">#Crear vector de valores chi teoricos</span></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>x_teor <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fu">qchisq</span>(<span class="fl">0.95</span>,<span class="dv">8</span>), <span class="dv">40</span>)</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a><span class="co">#Crear vector de p-Valor</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>p_vector <span class="ot">&lt;-</span> <span class="fu">dchisq</span>(x_teor, <span class="dv">8</span>)</span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a><span class="co">#Rellenado</span></span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a><span class="fu">polygon</span>(<span class="fu">c</span>(x_teor, <span class="fu">rev</span>(x_teor)), <span class="fu">c</span>(p_vector, <span class="fu">rep</span>(<span class="dv">0</span>, <span class="fu">length</span>(p_vector))),</span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a>        <span class="at">col =</span> <span class="fu">adjustcolor</span>(<span class="st">'red'</span>, <span class="at">alpha=</span><span class="fl">0.3</span>), <span class="at">border =</span> <span class="cn">NA</span>)</span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a><span class="co">#Crear vector de valor observado</span></span>
+<span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a>x_obs <span class="ot">&lt;-</span> <span class="fu">seq</span>(x, <span class="dv">40</span>)</span>
+<span id="cb27-20"><a href="#cb27-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-21"><a href="#cb27-21" aria-hidden="true" tabindex="-1"></a><span class="co">#Crear vector de p-Valor</span></span>
+<span id="cb27-22"><a href="#cb27-22" aria-hidden="true" tabindex="-1"></a>p_vector <span class="ot">&lt;-</span> <span class="fu">dchisq</span>(x_obs, <span class="dv">8</span>)</span>
+<span id="cb27-23"><a href="#cb27-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-24"><a href="#cb27-24" aria-hidden="true" tabindex="-1"></a><span class="co">#Rellenado</span></span>
+<span id="cb27-25"><a href="#cb27-25" aria-hidden="true" tabindex="-1"></a><span class="fu">polygon</span>(<span class="fu">c</span>(x_obs, <span class="fu">rev</span>(x_obs)), <span class="fu">c</span>(p_vector, <span class="fu">rep</span>(<span class="dv">0</span>, <span class="fu">length</span>(p_vector))),</span>
+<span id="cb27-26"><a href="#cb27-26" aria-hidden="true" tabindex="-1"></a>        <span class="at">col =</span> <span class="fu">adjustcolor</span>(<span class="st">'green'</span>, <span class="at">alpha=</span><span class="fl">0.3</span>), <span class="at">border =</span> <span class="cn">NA</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Informe---Trabajo-Práctico-Regresión-Logística---AyME-2_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>La prueba de hipótesis no rechaza la hipótesis nula.</p>
@@ -533,25 +558,25 @@ X-squared = 3.6374, df = 8, p-value = 0.8883</code></pre>
 <h2 class="anchored" data-anchor-id="predicción-del-modelo">Predicción del modelo</h2>
 <p>Predicción de la probabilidad de que el tumor sea maligno.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>referencia <span class="ot">&lt;-</span> cmama3<span class="sc">$</span>diagnostico</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>prediccion <span class="ot">&lt;-</span> <span class="fu">predict</span>(modelo_aic, <span class="at">type=</span><span class="st">"response"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>referencia <span class="ot">&lt;-</span> cmama3<span class="sc">$</span>diagnostico</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>prediccion <span class="ot">&lt;-</span> <span class="fu">predict</span>(modelo_aic, <span class="at">type=</span><span class="st">"response"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Curva ROC y área bajo la curva ROC.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>curva <span class="ot">&lt;-</span> <span class="fu">roc</span>(referencia, prediccion)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>curva <span class="ot">&lt;-</span> <span class="fu">roc</span>(referencia, prediccion)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Setting levels: control = 0, case = 1</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Setting direction: controls &lt; cases</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="dv">1</span><span class="sc">-</span>curva<span class="sc">$</span>specificities, curva<span class="sc">$</span>sensitivities, <span class="at">type=</span><span class="st">"l"</span>,<span class="at">xlab=</span><span class="st">"1-Especificidad"</span>,<span class="at">ylab=</span><span class="st">"Sensibilidad"</span>,<span class="at">lwd=</span><span class="dv">2</span>,<span class="at">col=</span><span class="st">"blue"</span>,<span class="at">xaxs=</span><span class="st">"i"</span>,<span class="at">yaxs=</span><span class="st">"i"</span>)</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="fu">segments</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="at">lwd=</span><span class="dv">2</span>,<span class="at">col=</span><span class="st">"red"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="dv">1</span><span class="sc">-</span>curva<span class="sc">$</span>specificities, curva<span class="sc">$</span>sensitivities, <span class="at">type=</span><span class="st">"l"</span>,<span class="at">xlab=</span><span class="st">"1-Especificidad"</span>,<span class="at">ylab=</span><span class="st">"Sensibilidad"</span>,<span class="at">lwd=</span><span class="dv">2</span>,<span class="at">col=</span><span class="st">"blue"</span>,<span class="at">xaxs=</span><span class="st">"i"</span>,<span class="at">yaxs=</span><span class="st">"i"</span>)</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="fu">segments</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">1</span>,<span class="at">lwd=</span><span class="dv">2</span>,<span class="at">col=</span><span class="st">"red"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Informe---Trabajo-Práctico-Regresión-Logística---AyME-2_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid" width="672"></p>
+<p><img src="Informe---Trabajo-Práctico-Regresión-Logística---AyME-2_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid" width="672"></p>
 </div>
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Area bajo la curva ROC</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>(areaRoc<span class="ot">&lt;-</span><span class="fu">auc</span>(referencia, prediccion)); <span class="fu">ci</span>(areaRoc)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Area bajo la curva ROC</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>(areaRoc<span class="ot">&lt;-</span><span class="fu">auc</span>(referencia, prediccion)); <span class="fu">ci</span>(areaRoc)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Setting levels: control = 0, case = 1
 Setting direction: controls &lt; cases</code></pre>
@@ -565,8 +590,8 @@ Setting direction: controls &lt; cases</code></pre>
 </div>
 <p>Corte óptimo de la curva ROC</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>(opt <span class="ot">&lt;-</span> <span class="fu">coords</span>(curva, <span class="st">"best"</span>, <span class="at">ret=</span><span class="fu">c</span>(<span class="st">"threshold"</span>, <span class="st">"specificity"</span>, <span class="st">"sensitivity"</span>, <span class="st">"accuracy"</span>,</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>                                  <span class="st">"tn"</span>, <span class="st">"tp"</span>, <span class="st">"fn"</span>, <span class="st">"fp"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>(opt <span class="ot">&lt;-</span> <span class="fu">coords</span>(curva, <span class="st">"best"</span>, <span class="at">ret=</span><span class="fu">c</span>(<span class="st">"threshold"</span>, <span class="st">"specificity"</span>, <span class="st">"sensitivity"</span>, <span class="st">"accuracy"</span>,</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>                                  <span class="st">"tn"</span>, <span class="st">"tp"</span>, <span class="st">"fn"</span>, <span class="st">"fp"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>          threshold specificity sensitivity  accuracy  tn  tp fn fp
 threshold 0.4540945   0.9579832   0.9150943 0.9420035 342 194 18 15</code></pre>
@@ -574,9 +599,9 @@ threshold 0.4540945   0.9579832   0.9150943 0.9420035 342 194 18 15</code></pre>
 </div>
 <p>Tabla de clasificación</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Según corte óptimo de corte por Youden</span></span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>prediccion_clases <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(prediccion <span class="sc">&gt;</span> opt<span class="sc">$</span>threshold, <span class="dv">1</span>, <span class="dv">0</span>)</span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a><span class="fu">confusionMatrix</span>(<span class="at">data =</span> <span class="fu">factor</span>(prediccion_clases), <span class="at">reference =</span> <span class="fu">factor</span>(cmama3<span class="sc">$</span>diagnostico), <span class="at">positive =</span> <span class="st">"1"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Según corte óptimo de corte por Youden</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>prediccion_clases <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(prediccion <span class="sc">&gt;</span> opt<span class="sc">$</span>threshold, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a><span class="fu">confusionMatrix</span>(<span class="at">data =</span> <span class="fu">factor</span>(prediccion_clases), <span class="at">reference =</span> <span class="fu">factor</span>(cmama3<span class="sc">$</span>diagnostico), <span class="at">positive =</span> <span class="st">"1"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Confusion Matrix and Statistics
 
@@ -607,6 +632,9 @@ Prediction   0   1
                                           </code></pre>
 </div>
 </div>
+</section>
+<section id="conclusión" class="level2">
+<h2 class="anchored" data-anchor-id="conclusión">Conclusión</h2>
 </section>
 </section>
 

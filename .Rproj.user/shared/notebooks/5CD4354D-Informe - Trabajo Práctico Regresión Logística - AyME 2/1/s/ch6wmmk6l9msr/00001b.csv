@@ -1,0 +1,6 @@
+"0","#Creación curva de densidad"
+"0","x <- 3.4834"
+"0","curve(dchisq(x, 8), from = 0, to = 40,"
+"0","      main = 'Prueba de Bondad de Ajuste Hosmer-Lemeshow (gl = 8)', xlab = 'Estadístico C',"
+"0","      ylab = 'Densidad de Probabilidad',"
+"0","      lwd = 2)"

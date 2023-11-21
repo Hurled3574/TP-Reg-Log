@@ -214,8 +214,38 @@ Y la hipótesis alternativa es que no lo está.
 El estadístico de la prueba es el Chi-Cuadrado de Pearson con nivel de significancia de 0.95 y 10 (clases) - 2 grados de libertad
 
 ```{r}
-HosmerLemeshowTest(fit = fitted(modelo_aic), obs = cmama3$diagnostico)
+HosmerLemeshowTest(fit = fitted(modelo_aic), obs = cmama3$diagnostico)$C
 ```
+
+```{r}
+#Creación curva de densidad
+x <- 3.4834
+curve(dchisq(x, 8), from = 0, to = 40,
+      main = 'Prueba de Bondad de Ajuste Hosmer-Lemeshow (gl = 8)', xlab = 'Estadístico C',
+      ylab = 'Densidad de Probabilidad',
+      lwd = 2)
+
+#Crear vector de valores chi teoricos
+x_teor <- seq(qchisq(0.95,8), 40)
+
+#Crear vector de p-Valor
+p_vector <- dchisq(x_teor, 8)
+
+#Rellenado
+polygon(c(x_teor, rev(x_teor)), c(p_vector, rep(0, length(p_vector))),
+        col = adjustcolor('red', alpha=0.3), border = NA)
+
+#Crear vector de valor observado
+x_obs <- seq(x, 40)
+
+#Crear vector de p-Valor
+p_vector <- dchisq(x_obs, 8)
+
+#Rellenado
+polygon(c(x_obs, rev(x_obs)), c(p_vector, rep(0, length(p_vector))),
+        col = adjustcolor('green', alpha=0.3), border = NA)
+```
+
 
 La prueba de hipótesis no rechaza la hipótesis nula.
 

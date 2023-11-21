@@ -1,0 +1,2 @@
+"0","(opt <- coords(curva, ""best"", ret=c(""threshold"", ""specificity"", ""sensitivity"", ""accuracy"","
+"0","                                  ""tn"", ""tp"", ""fn"", ""fp"")))"
