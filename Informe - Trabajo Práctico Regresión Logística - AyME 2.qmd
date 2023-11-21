@@ -27,11 +27,11 @@ library(DescTools)
 
 ## Resumen
 
-Se ha desarrollado un sistema de diagnóstico de tumores de mama mediante técnicas interactivas de procesamiento de imágenes y un clasificador basado en programación lineal. El sistema analiza el tamaño, la forma y la textura del núcleo para calcular diez características para cada núcleo. Al probar diferentes combinaciones de características, el estudio logró una precisión del 97% al distinguir entre muestras benignas y malignas. Unas 569 imágenes se han de procesado de esta manera obteniendo las 10 variables para cada una de ellas. El objetivo de este trabajo es desarrollar un modelo de regresión logística que permita predecir si un tumor es benigno o maligno en base a las variables obtenidas.
+Se ha desarrollado un sistema de diagnóstico de tumores de mama mediante técnicas interactivas de procesamiento de imágenes y un clasificador basado en programación lineal. El sistema analiza el tamaño, la forma y la textura del núcleo para calcular diez características para cada núcleo. Al probar diferentes combinaciones de características, el estudio logró una precisión del 94% al distinguir entre muestras benignas y malignas. Unas 569 imágenes se han de procesado de esta manera obteniendo las 10 variables para cada una de ellas. El objetivo de este trabajo es desarrollar un modelo de regresión logística que permita predecir si un tumor es benigno o maligno en base a las variables obtenidas.
 
 ## Introducción
 
-La siguiente base de datos contiene información sobre 569 tumores de mama, de los cuales 357 son benignos y 212 son malignos. Para cada uno de ellos se registraron 32 variables, de las cuales 30 son numéricas y 2 son categóricas. Las variables numéricas son medidas obtenidas a partir de imágenes digitalizadas de los tumores, mientras que las variables categóricas son el diagnóstico (benigno o maligno) y el identificador del paciente. De las 30 variables numéricas, 10 son medidas obtenidas a partir de la media de las imágenes, 10 son medidas obtenidas a partir del error estándar de las imágenes y 10 son medidas obtenidas a partir del peor valor de las imágenes. Para este trabajo se utilizan las variables obtenidas a partir de la media de las imágenes para desarrollar un modelo de regresión logística que permita explicar la variable categórica diagnóstico.
+La siguiente base de datos contiene información sobre 569 tumores de mama, de los cuales 357 son benignos y 212 son malignos. Para cada uno de ellos se registraron 32 variables, de las cuales 30 son numéricas y 2 son categóricas. Las variables numéricas son medidas obtenidas a partir de imágenes digitalizadas de los tumores, mientras que las variables categóricas son el diagnóstico (benigno o maligno) y el identificador del paciente. De las 30 variables numéricas, 10 son medidas obtenidas a partir de la media de las imágenes, 10 son medidas obtenidas a partir sus errores estándar y 10 son medidas obtenidas a partir de sus peores valores. Para este trabajo se utilizan las variables obtenidas a partir de la media de las imágenes para desarrollar un modelo de regresión logística que permita explicar la variable categórica *diagnóstico*.
 
 ## Carga de datos
 
@@ -285,6 +285,10 @@ Tabla de clasificación
 prediccion_clases <- ifelse(prediccion > opt$threshold, 1, 0)
 confusionMatrix(data = factor(prediccion_clases), reference = factor(cmama3$diagnostico), positive = "1")
 ```
+
+En resumen, se calculó el mejor punto de corte [*cut-off* o *threshold*], cuya precisión es de $0.454$. Esto significa que si la chance de un posible tumor maligno observado sea mayor que $0.454$, entonces se decide por un diagnóstico de *tumor maligno* de cáncer de mama. Pero si la chance es menor o igual que $0.454$, entonces se decide por un diagnóstico de *tumor benigno*. 
+
+Además, la sensibilidad [*sensitivity*] es de $0.915$. Esto significa que la probabilidad de decidir en forma adecuada por un diagnóstico de *tumor maligno* y cáncer de mama es de $0.915$. Y la especificidad [*specificity*] de $0.958$ significa que la probabilidad de decidir de manera correcta por un diagnóstico de *tumor benigno* es de $0.958$.
 
 ## Conclusión
 
